@@ -172,4 +172,4 @@ util.inherits(MyEmitter, EventEmitter);
 const myEmitter = new MyEmitter();
 myEmitter.on('event', () => {
   console.log('an event occurred!');
-}); 
+});
