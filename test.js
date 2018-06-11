@@ -1,5 +1,11 @@
-http.createServer((req, res) => {
-    let data = '';
-    req.on('data', chunk => data += chunk)
-    req.on('end', () => { res.end(data) })
-}).listen(8080)
+function Person() {
+    process.nextTick(() => {
+        console.log('綁定事件處理器');
+    });
+    this.read = function() {
+        console.log('讀取文件!');
+    }
+}
+
+var man = new Person();
+man.read();
