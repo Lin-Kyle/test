@@ -1,11 +1,25 @@
-function Person() {
-    process.nextTick(() => {
-        console.log('綁定事件處理器');
-    });
-    this.read = function() {
-        console.log('讀取文件!');
-    }
-}
+console.log('log start!');
+setTimeout(function() {
+    console.log('setTimeout300');
+}, 300)
 
-var man = new Person();
-man.read();
+Promise.resolve().then(function() {
+    console.log('promise resolve');
+}).then(function() {
+    console.log('promise resolve then');
+})
+
+new Promise(function(resolve, reject) {
+    console.log('promise pending');
+    resolve();
+}).then(function() {
+    console.log('promise pending then');
+})
+
+setTimeout(function() {
+    console.log('setTimeout0');
+    Promise.resolve().then(function() {
+        console.log('promise3 in setTimeout');
+    })
+}, 0)
+console.log('log end!');
