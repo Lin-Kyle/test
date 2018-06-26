@@ -1,10 +1,43 @@
 const EventEmitter = require('events');
-
-let emitter = new EventEmitter();
-
-emitter.on('myEvent', function sth () {
-  emitter.on('myEvent', sth);
-  console.log('hi');
+//創建類
+class MyEmitter extends EventEmitter {}
+//實例化
+const myEmitter = new MyEmitter();
+//監聽
+myEmitter.on('newListener', () => {
+    console.log('触发了一个事件！');
 });
+myEmitter.on('event', () => {
+  console.log('A');
+});
+//觸發
+myEmitter.emit('event');
 
-emitter.emit('myEvent');
+
+
+##EventProxy
+
+
+
+##Promise()
+
+
+
+##connect
+
+
+
+##async
+
+
+
+
+##step
+
+
+
+
+
+
+#異步并發控制
+##bagpipe
