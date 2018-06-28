@@ -7,16 +7,14 @@ async.auto({
     showData: [
         'readData',
         function(results, cb) {
-            // results.readData is the file's contents
-            // ...
+            console.log('readData: ' + results);
         }
     ]
 }, function(err, results) {
-    console.log('err = ', err);
     console.log('results = ', results);
 });
 
-async.auto({
+/*async.auto({
     get_data: function(callback) {
         console.log('in get_data');
         // async code to get some data
@@ -30,7 +28,7 @@ async.auto({
     },
     write_file: [
         'get_data',
-        'make_folder',
+        'make_folder', 
         function(results, callback) {
             console.log('in write_file', JSON.stringify(results));
             // once there is some data and the directory exists,
@@ -54,3 +52,4 @@ async.auto({
     console.log('err = ', err);
     console.log('results = ', results);
 });
+*/

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "async": "^2.6.1",
     "bluebird": "^3.5.1",
     "eventproxy": "^1.0.0"
   }

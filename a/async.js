@@ -7,13 +7,11 @@ async.auto({
     showData: [
         'readData',
         function(results, cb) {
-            // results.readData is the file's contents
-            // ...
+            console.log('readData: ', results);
         }
     ]
 }, function(err, results) {
-    console.log('err = ', err);
-    console.log('results = ', results);
+    console.log('data = ', results);
 });
 
 async.auto({
