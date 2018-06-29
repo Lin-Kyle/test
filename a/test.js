@@ -5,7 +5,17 @@ class MyEmitter extends EventEmitter {}
 const myEmitter = new MyEmitter();
 //監聽
 myEmitter.on('event', () => {
-    console.log('触发了一个事件！');
+    console.log('1');
+});
+//監聽
+myEmitter.on('event', () => {
+    setImmediate(() => {
+        console.log('2');
+    });
+});
+//監聽
+myEmitter.on('event', () => {
+    console.log('3');
 });
 //觸發
 myEmitter.emit('event');

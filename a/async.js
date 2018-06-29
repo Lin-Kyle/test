@@ -1,54 +1,73 @@
-var async = require('async'),
+var waterfall = require('async/waterfall'),
+    auto = require('async/auto'),
     fs = require('fs');
 
-async.auto({
-    // this function will just be passed a callback
-    readData: async.apply(fs.readFile, 'data.txt', 'utf-8'),
-    showData: [
-        'readData',
-        function(results, cb) {
-            console.log('readData: ', results);
-        }
-    ]
-}, function(err, results) {
-    console.log('data = ', results);
-});
+/*waterfall([
+    function(callback) {
+        fs.readFile('data1.txt', 'utf8', function(err, data) {
+            if (err) {
+                return console.error(err);
+            }
+            console.log("第一次异步读取: " + data.toString());
+            callback(null, data.toString().trim());
+        });
+    },
+    function(file, callback) {
+        fs.readFile(file, 'utf8', function(err, data) {
+            if (err) {
+                return console.error(err);
+            }
+            console.log("第二次异步读取: " + data.toString());
+            callback(null, data.toString().trim());
+        });
+    },
+    function(file) {
+        fs.readFile(file, 'utf8', function(err, data) {
+            if (err) {
+                return console.error(err);
+            }
+            console.log("第三次异步读取: " + data.toString());
+        });
+    }
+], function(err, result) {
+    // result now equals 'done'
+});*/
 
-async.auto({
-    get_data: function(callback) {
-        console.log('in get_data');
-        // async code to get some data
-        callback(null, 'data', 'converted to array');
+//OR
+
+auto({
+    data1: function(callback) {
+        fs.readFile('data1.txt', 'utf8', function(err, data) {
+            if (err) {
+                return console.error(err);
+            }
+            console.log("第一次异步读取: " + data.toString());
+            callback(null, data.toString().trim());
+        });
     },
-    make_folder: function(callback) {
-        console.log('in make_folder');
-        // async code to create a directory to store a file in
-        // this is run at the same time as getting the data
-        callback(null, 'folder');
-    },
-    write_file: [
-        'get_data',
-        'make_folder',
-        function(results, callback) {
-            console.log('in write_file', JSON.stringify(results));
-            // once there is some data and the directory exists,
-            // write the data to a file in the directory
-            callback(null, 'filename');
+    data2: [
+        'data1',
+        function(file, callback) {
+            fs.readFile(file.data1, 'utf8', function(err, data) {
+                if (err) {
+                    return console.error(err);
+                }
+                console.log("第二次异步读取: " + data.toString());
+                callback(null, data.toString().trim());
+            });
         }
     ],
-    email_link: [
-        'write_file',
-        function(results, callback) {
-            console.log('in email_link', JSON.stringify(results));
-            // once the file is written let's email a link to it...
-            // results.write_file contains the filename returned by write_file.
-            callback(null, {
-                'file': results.write_file,
-                'email': 'user@example.com'
+    data3: [
+        'data2',
+        function(file) {
+            fs.readFile(file.data2, 'utf8', function(err, data) {
+                if (err) {
+                    return console.error(err);
+                }
+                console.log("第三次异步读取: " + data.toString());
             });
         }
     ]
-}, function(err, results) {
-    console.log('err = ', err);
-    console.log('results = ', results);
+}, function(err, result) {
+    // result now equals 'done'
 });
