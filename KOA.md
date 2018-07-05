@@ -30,14 +30,14 @@ console.log('已建立连接，效果请看http://127.0.0.1:3000/');
 
 ##级联
 Koa 应用程序是一个包含一组中间件函数的对象，它是按照类似堆栈的方式组织和执行的。
-使用 async 功能，我们可以实现 “真实” 的中间件。当一个中间件调用 next() 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。
+使用 async 功能，我们可以实现 “真实” 的中间件。当一个中间件调用 next() 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。（用一种比较相似的比喻就是事件捕捉到事件冒泡的过程）。
 
 const Koa = require('koa'),
     app = new Koa();
 
 // 一层中间
 app.use(async (ctx, next) => {
-    console.log( '请求资源：' + ctx.url);
+    console.log('请求资源：' + ctx.url);
     console.log('一层中间件控制传递下去');
     await next();
     console.log('一层中间件控制传递回来');
@@ -47,26 +47,24 @@ app.use(async (ctx, next) => {
 app.use(async (ctx, next) => {
     console.log('二层中间件控制传递下去');
     await next();
-    console.log('一层中间件控制传递回来');
+    console.log('二层中间件控制传递回来');
 });
 
 // response
 app.use(async ctx => {
+    console.log('输出body');
     ctx.body = '暗号：Hello World';
 });
 
 app.listen(3000);
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
-// 请求资源：/
+
 // 一层中间件控制传递下去
 // 二层中间件控制传递下去
+// 输出body
+// 二层中间件控制传递回来
 // 一层中间件控制传递回来
-// 一层中间件控制传递回来
-// 请求资源：/favicon.ico
-// 一层中间件控制传递下去
-// 二层中间件控制传递下去
-// 一层中间件控制传递回来
-// 一层中间件控制传递回来
+
 
 从上面结果可以看出每请求一次资源都会经过所有中间件，利用 async 语句操控控制权流向传递。
 
@@ -188,3 +186,116 @@ app.use(async ctx => {
     }
 }).listen(3000);
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+
+
+##路由
+其实我们上面的代码已经是原始路由的用法了，我们增加请求资源的判断就可以了，另外新增一个index.html模板切换看效果
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+
+<body>
+    <p>没错，我就是首页</p>
+</body>
+
+</html>
+
+然后我们去掉类型判断等代码，直接写死html即可，不然默认为空，打开页面会触发下载的。
+const Koa = require('koa'),
+    fs = require('fs'),
+    app = new Koa();
+
+app.use(async ctx => {
+    console.log('type: ' + ctx.type);
+    switch (ctx.url) {
+        case '/':
+            ctx.type = 'html';
+            ctx.body = fs.createReadStream('./index.html');
+            break;
+        case '/template':
+            ctx.body = fs.createReadStream('./template.html');
+            break;
+        default:
+            ctx.throw(406, 'json, html, or text only');
+    }
+}).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+执行脚本之后会默认看到index.html模板内容，手动换成http://127.0.0.1:3000/template在Chrome会看到下载弹窗，其他浏览器没试过。
+
+
+实际开发我们不会这么繁琐区别路由，上面说过koa 不在内核方法中绑定任何中间件， 它仅仅提供了一个轻量优雅的函数库。所以我们需要安装一个路由中间件 [koa-route3.2.0](https://www.npmjs.com/package/koa-route) ，上次推送已经是两年前了，如果不是放弃维护就是已经很稳定了。
+yarn add koa-route
+如果你需要使用完整特性的路由库可以看 [koa-router](https://github.com/alexmingoia/koa-router)
+这里简单展示 koa-route 用法。
+
+const Koa = require('koa'),
+    _ = require('koa-route'),
+    fs = require('fs'),
+    app = new Koa();
+
+const pets = {
+    index: (ctx) => {
+        //doSomethings
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream('./index.html');
+    },
+    template: (ctx) => {
+        //doSomethings
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream('./template.html');
+    }
+};
+
+app.use(_.get('/', pets.index)).use(_.get('/template', pets.template)).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+
+
+##静态资源
+聪明的人在上面代码就能看出一些问题，我们现在还是通过url判断返回页面，如果是其他静态资源如图片那些又怎么办？
+我们可以安装依赖库[koa-static5.0.0](https://www.npmjs.com/package/koa-static)，
+yarn add koa-static
+require('koa-static')(root, opts)
+通过设置根目录和可选项会配置静态资源查找路径，我们先创建一个img目录存放一张图片，然后在inded.html引用，再甚至路径serve(__dirname + '/img/')，它会自动到指定目录下查找资源。
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+
+<body>
+    <p>没错，我就是首页</p>
+    <img src="./1.gif" />
+</body>
+
+</html>
+
+
+const Koa = require('koa'),
+    _ = require('koa-route'),
+    serve = require('koa-static'),
+    fs = require('fs'),
+    app = new Koa();
+
+const pets = {
+    index: (ctx) => {
+        //doSomethings
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream('./index.html');
+    },
+    template: (ctx) => {
+        //doSomethings
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream('./template.html');
+    }
+};
+app.use(serve(__dirname + '/img/')).use(_.get('/', pets.index)).use(_.get('/template', pets.template)).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+
+如果你还是有些不懂的话修改下路径，serve(__dirname)，然后图片地址换成<img src="./img/1.gif" />。你就看到还是能找到对应资源。
