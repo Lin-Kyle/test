@@ -30,7 +30,7 @@ console.log('已建立连接，效果请看http://127.0.0.1:3000/');
 
 ##级联
 Koa 应用程序是一个包含一组中间件函数的对象，它是按照类似堆栈的方式组织和执行的。
-使用 async 功能，我们可以实现 “真实” 的中间件。当一个中间件调用 next() 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。（用一种比较相似的比喻就是事件捕捉到事件冒泡的过程）。
+当一个中间件调用 next() 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。（用一种比较相似的比喻就是事件捕捉到事件冒泡的过程）。
 
 const Koa = require('koa'),
     app = new Koa();
@@ -254,6 +254,151 @@ app.use(_.get('/', pets.index)).use(_.get('/template', pets.template)).listen(30
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
 
 
+
+##错误处理
+>100 "continue"
+101 "switching protocols"
+102 "processing"
+200 "ok"
+201 "created"
+202 "accepted"
+203 "non-authoritative information"
+204 "no content"
+205 "reset content"
+206 "partial content"
+207 "multi-status"
+208 "already reported"
+226 "im used"
+300 "multiple choices"
+301 "moved permanently"
+302 "found"
+303 "see other"
+304 "not modified"
+305 "use proxy"
+307 "temporary redirect"
+308 "permanent redirect"
+400 "bad request"
+401 "unauthorized"
+402 "payment required"
+403 "forbidden"
+404 "not found"
+405 "method not allowed"
+406 "not acceptable"
+407 "proxy authentication required"
+408 "request timeout"
+409 "conflict"
+410 "gone"
+411 "length required"
+412 "precondition failed"
+413 "payload too large"
+414 "uri too long"
+415 "unsupported media type"
+416 "range not satisfiable"
+417 "expectation failed"
+418 "I'm a teapot"
+422 "unprocessable entity"
+423 "locked"
+424 "failed dependency"
+426 "upgrade required"
+428 "precondition required"
+429 "too many requests"
+431 "request header fields too large"
+500 "internal server error"
+501 "not implemented"
+502 "bad gateway"
+503 "service unavailable"
+504 "gateway timeout"
+505 "http version not supported"
+506 "variant also negotiates"
+507 "insufficient storage"
+508 "loop detected"
+510 "not extended"
+511 "network authentication required"
+
+###状态码错误
+有两种写法，ctx.throw(状态码)或者ctx.status = 状态码，它们都会自动返回默认文字信息区别在于后者能通过ctx.body设置返回信息。
+
+const Koa = require('koa'),
+    _ = require('koa-route'),
+    app = new Koa();
+
+const pets = {
+    '403': (ctx) => {
+        //doSomethings
+        ctx.throw(403);
+        ctx.body = '403';
+    },
+    '404': (ctx) => {
+        //doSomethings
+        ctx.status = 404;
+        ctx.body = `<p>404啦！</p>`;
+    }
+};
+
+app.use(_.get('/', pets['403'])).use(_.get('/404', pets[404])).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+
+
+##错误监听
+const Koa = require('koa'),
+    _ = require('koa-route'),
+    app = new Koa();
+
+const pets = {
+    index: (ctx) => {
+        //doSomethings
+        ctx.throw(500);
+    }
+};
+
+app.on('error', (err, ctx) => console.error('error', err)).use(_.get('/', pets.index)).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+
+
+###错误捕捉
+你也能直接使用try...catch()直接处理，但是错误监听不会接收到错误信息。
+const Koa = require('koa'),
+    app = new Koa();
+
+const err = async (ctx, next) => {
+        try {
+            await next();
+        } catch (err) {
+            ctx.status = 404;
+            ctx.body = `<p>404啦！</p>`;
+        }
+    },
+    index = ctx => {
+        ctx.throw(500);
+    };
+
+app.use(err).use(index).on('error', function(err) {
+    console.error('error', err)
+}).listen(3000);
+如果想同时触发错误监听，KOA提供了emit方法。
+const Koa = require('koa'),
+    app = new Koa();
+
+const err = async (ctx, next) => {
+        try {
+            await next();
+        } catch (err) {
+            ctx.status = 404;
+            ctx.body = `<p>404啦！</p>`;
+            ctx.app.emit('error', err, ctx);
+        }
+    },
+    index = ctx => {
+        ctx.throw(500);
+    };
+
+app.use(err).use(index).on('error', function(err) {
+    console.error('error', err)
+}).listen(3000);
+
+
+
+
 ##静态资源
 聪明的人在上面代码就能看出一些问题，我们现在还是通过url判断返回页面，如果是其他静态资源如图片那些又怎么办？
 我们可以安装依赖库[koa-static5.0.0](https://www.npmjs.com/package/koa-static)，
@@ -299,3 +444,90 @@ app.use(serve(__dirname + '/img/')).use(_.get('/', pets.index)).use(_.get('/temp
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
 
 如果你还是有些不懂的话修改下路径，serve(__dirname)，然后图片地址换成<img src="./img/1.gif" />。你就看到还是能找到对应资源。
+
+
+##中间件管理
+随着项目开发你可能会越要安装越来越多的中间件，所有可以使用[koa-compose](https://www.npmjs.com/package/koa-compose)做中间件管理。
+const Koa = require('koa'),
+    compose = require('koa-compose'),
+    app = new Koa();
+
+// 一层中间
+const mid1 = (ctx, next) => {
+    console.log('请求资源：' + ctx.url);
+    console.log('一层中间件控制传递下去');
+    next();
+    console.log('一层中间件控制传递回来');
+};
+
+// 二层中间
+const mid2 = (ctx, next) => {
+    console.log('二层中间件控制传递下去');
+    next();
+    console.log('二层中间件控制传递回来');
+};
+
+// response
+const mid3 = ctx => {
+    console.log('输出body');
+    ctx.body = '暗号：Hello World';
+};
+
+app.use(compose([mid1, mid2, mid3])).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+// 请求资源：/
+// 一层中间件控制传递下去
+// 二层中间件控制传递下去
+// 输出body
+// 二层中间件控制传递回来
+// 一层中间件控制传递回来
+
+
+
+##请求处理
+我们处理请求的时候可以用[koa-body](https://www.npmjs.com/package/koa-body)解析请求体。
+> A full-featured koa body parser middleware. Support multipart, urlencoded and json request bodies. Provides same functionality as Express's bodyParser - multer. And all that is wrapped only around co-body and formidable.
+
+> 一个功能丰富的body解析中间件，支持多部分，urlencoded，json请求体，提供Express里bodyParse一样的函数方法
+直接安装依赖
+yarn add koa-body
+
+新建一个提交页面
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+
+<body>
+    <form class="" action="/upload" method="post">
+        <input type="text" name="name" value="">
+        <button type="submit" name="button">提交</button>
+    </form>
+</body>
+
+</html>
+
+
+可以输出格式看看效果
+const Koa = require('koa'),
+    koaBody = require('koa-body'),
+    _ = require('koa-route'),
+    fs = require('fs'),
+    app = new Koa();
+
+const pets = {
+    index: (ctx) => {
+        //doSomethings
+        ctx.type = 'html';
+        ctx.body = fs.createReadStream('./upload.html');
+    }
+};
+
+app.use(koaBody()).use(_.get('/', pets.index)).use(_.post('/upload', ctx => {
+    console.log(ctx.request.body);
+    ctx.body = `Request Body: ${JSON.stringify(ctx.request.body)}`;
+})).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
