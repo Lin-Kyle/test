@@ -3,10 +3,15 @@ const Koa = require('koa'),
     app = new Koa();
 
 app.use(async ctx => {
-    switch (ctx.accepts('json', 'html', 'text')) {
-        case 'html':
+    console.log('type: ' + ctx.type);
+    switch (ctx.url) {
+        case '/':
             ctx.type = 'html';
-            ctx.body = fs.createReadStream('./template.html');
+            ctx.body = fs.createReadStream('./template1.html');
+            break;
+        case '/template2':
+            ctx.type = 'html';
+            ctx.body = fs.createReadStream('./template2.html');
             break;
         default:
             ctx.throw(406, 'json, html, or text only');

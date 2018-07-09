@@ -7,6 +7,7 @@ app.use((ctx, next) => {
     console.log('一层中间件控制传递下去');
     next();
     console.log('一层中间件控制传递回来');
+    ctx.body = '暗号：Day Day Up';
 });
 
 // 二层中间
@@ -19,7 +20,7 @@ app.use((ctx, next) => {
 // response
 app.use(ctx => {
     console.log('输出body');
-    ctx.body = '暗号：Hello World';
+    ctx.body = '暗号：Good Good Study';
 });
 
 app.listen(3000);
