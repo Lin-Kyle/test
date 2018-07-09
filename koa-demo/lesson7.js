@@ -3,18 +3,18 @@ const Koa = require('koa'),
     fs = require('fs'),
     app = new Koa();
 
-const pets = {
+const route = {
     index: (ctx) => {
         //doSomethings
         ctx.type = 'html';
-        ctx.body = fs.createReadStream('./index.html');
+        ctx.body = fs.createReadStream('./template1.html');
     },
-    template: (ctx) => {
+    template2: (ctx) => {
         //doSomethings
         ctx.type = 'html';
-        ctx.body = fs.createReadStream('./template.html');
+        ctx.body = fs.createReadStream('./template2.html');
     }
 };
 
-app.use(_.get('/', pets.index)).use(_.get('/template', pets.template)).listen(3000);
+app.use(_.get('/', route.index)).use(_.get('/template2', route.template2)).listen(3000);
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
