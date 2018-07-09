@@ -1,21 +1,22 @@
 ##完整Demo地址
+裏面demo都是自己寫的，保證能跑，至於環境問題我就不敢保證了。懶得寫就去上面搬走看，懶得搬就直接看文章，大部分代碼連輸出信息都給你們了。
 [koa-demo](https://github.com/Lin-Kyle/koa-demo)
 
 
 ## 官网介绍
-koa 是由 Express 原班人马打造的，致力于成为一个更小、更富有表现力、更健壮的 Web 框架。 使用 koa 编写 web 应用，通过组合不同的 generator，可以免除重复繁琐的回调函数嵌套， 并极大地提升错误处理的效率。koa 不在内核方法中绑定任何中间件， 它仅仅提供了一个轻量优雅的函数库，使得编写 Web 应用变得得心应手。
+[color=#ec7379]koa[/color] 是由 [color=#ec7379]Express[/color] 原班人马打造的，致力于成为一个更小、更富有表现力、更健壮的 Web 框架。 使用 koa 编写 web 应用，通过组合不同的 [color=#ec7379]generator[/color]，可以免除重复繁琐的回调函数嵌套， 并极大地提升错误处理的效率。koa 不在内核方法中绑定任何中间件， 它仅仅提供了一个轻量优雅的函数库，使得编写 Web 应用变得得心应手。
 
 
 ## 前期准备
 我们首先安装一些必要库先，根据个人选择可以使用yarn，cnpm，或者npm都行。
-KOA框架
+> KOA框架
 yarn add koa
 
-这还不够，因为 Koa 依赖 node v7.6.0 或 ES2015 及更高版本和 async 方法支持.你们可以根据自身需要安装
-[Babel register](https://babel.bootcss.com/docs/usage/babel-register/)
+这还不够，因为 Koa 依赖 [color=#ff4753]node v7.6.0[/color] 或 [color=#ff4753]ES2015及更高版本[/color]和 [color=#ff4753]async[/color] 方法支持.你们可以根据自身需要安装
+> [Babel register](https://babel.bootcss.com/docs/usage/babel-register/)
 transform-async-to-generator 或 transform-async-to-module-method
 
-因为我用到Nodejs10，所以不需要安装这些东西，就不说了。
+因为我用到 Nodejs10.0，所以不需要安装这些东西，就不说了。
 
 
 
@@ -24,10 +25,11 @@ transform-async-to-generator 或 transform-async-to-module-method
 ```javascript
 const Koa = require('koa'),
     app = new Koa();
-
+//爲了這裏格式換行
 app.use(async ctx => {
     ctx.body = '暗号：Hello World';
 }).listen(3000);
+//爲了這裏格式換行
 console.log('已建立连接，效果请看http://127.0.0.1:3000/');
 ```
 代码一目了然，不廢話了。
@@ -36,20 +38,20 @@ LS1
 
 
 ## Favicon.ico
-所谓favicon，即Favorites Icon的缩写，顾名思义，便是其可以让浏览器的收藏夹中除显示相应的标题外，还以图标的方式区别不同的网站。当然，这不是Favicon的全部，根据浏览器的不同，Favicon显示也有所区别：在大多数主流浏览器如FireFox和Internet Explorer (5.5及以上版本)中，favicon不仅在收藏夹中显示，还会同时出现在地址栏上，这时用户可以拖曳favicon到桌面以建立到网站的快捷方式；除此之外，标签式浏览器甚至还有不少扩展的功能，如FireFox甚至支持动画格式的favicon等。
+所谓 [color=#ec7379]favicon[/color]，即 [color=#ec7379]Favorites Icon[/color] 的缩写，顾名思义，便是其可以让浏览器的收藏夹中除显示相应的标题外，还以图标的方式区别不同的网站。当然，这不是Favicon的全部，根据浏览器的不同，Favicon显示也有所区别：在大多数主流浏览器如FireFox和Internet Explorer (5.5及以上版本)中，favicon不仅在收藏夹中显示，还会同时出现在地址栏上，这时用户可以拖曳favicon到桌面以建立到网站的快捷方式；除此之外，标签式浏览器甚至还有不少扩展的功能，如FireFox甚至支持动画格式的favicon等。
 問題在於這裡代碼浏览器会自動發起请求网站根目录的这个图标，干擾測試，所以接下來的打印結果大家無視Favicon.ico請求就好。
 
 
 
 ## 级联
 Koa 应用程序是一个包含一组中间件函数的对象，它是按照类似堆栈的方式组织和执行的。
-当一个中间件调用 next() 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。（用一种比较相似的比喻就是中間件相當於一次DOM事件，從事件捕捉到事件冒泡的过程）。
+当一个中间件调用 [color=#ec7379]next()[/color] 则该函数暂停并将控制传递给定义的下一个中间件。当在下游没有更多的中间件执行后，堆栈将展开并且每个中间件恢复执行其上游行为。（用一种比较相似的比喻就是中間件相當於一次DOM事件，從事件捕捉到事件冒泡的过程）。
 
 ```javascript
 const Koa = require('koa'),
     app = new Koa();
 
-// 一层中间
+// 一层中间件
 app.use((ctx, next) => {
     console.log('请求资源：' + ctx.url);
     console.log('一层中间件控制传递下去');
@@ -58,7 +60,7 @@ app.use((ctx, next) => {
     ctx.body = '暗号：Day Day Up';
 });
 
-// 二层中间
+// 二层中间件
 app.use((ctx, next) => {
     console.log('二层中间件控制传递下去');
     next();
@@ -91,7 +93,7 @@ LS2
 
 
 ##上下文(Context)
-Koa Context 将 node 的 request 和 response 对象封装到单个对象中，每个请求都将创建一个 Context，并在中间件中作为接收器引用，或者 ctx 标识符，许多上下文的访问器和方法直接委托给它们的 ctx.request 或 ctx.response。
+[color=#ec7379]Koa Context[/color] 将 [color=#ec7379]Nodejs[/color] 的 [color=#ec7379]request[/color] 和 [color=#ec7379]response[/color] 对象封装到单个对象中，每个请求都将创建一个 [color=#ec7379]Context[/color]，并在中间件中作为接收器引用，或者 [color=#ec7379]ctx[/color] 标识符，许多上下文的访问器和方法直接委托给它们的 [color=#ec7379]ctx.request[/color] 或 [color=#ec7379]ctx.response[/color]。
 我们可以直接打印出来ctx对象看看有什么。
 ```javascript
 const Koa = require('koa'),
@@ -100,9 +102,6 @@ const Koa = require('koa'),
 // response
 app.use(async ctx => {
     console.log('ctx：', ctx);
-    if (ctx.url === '/favicon.ico')
-        return;
-    }
 );
 
 app.listen(3000);
