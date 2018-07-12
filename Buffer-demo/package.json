@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "autocannon": "^2.4.1",
+    "http": "^0.0.0",
+    "iconv-lite": "^0.4.23",
+    "koa-body": "^4.0.4",
+    "loadtest": "^3.0.3"
+  }
+}
