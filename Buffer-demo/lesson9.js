@@ -1,12 +1,9 @@
 var http = require('http');
 
-let str = '',
-    i = 0,
-    len = 10 * 1024;
+let str = new Array(10*1024).join('a');
 
-for (; i < len; i++) str += i;
-// str =  Buffer.from(str);
 http.createServer(function(req, res) {
     res.writeHead(200);
     res.end(str);
 }).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');

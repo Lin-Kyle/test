@@ -732,3 +732,155 @@ rs.on("end", function() {
 });
 ```
 LS8
+
+
+## 性能
+BR在文件I/O和网络I/O运用广泛，特别在网络传输中会转换成BR进行二进制数据传输。
+
+### 网络请求
+我们做一些性能测试看看效果，构造一个简单的字符串返回给客户端。新建脚本 lesson9.js 复制下面代码并启动。
+```
+var http = require('http');
+
+let str = new Array(10*1024).join('a');
+
+// str =  Buffer.from(str);
+http.createServer(function(req, res) {
+    res.writeHead(200);
+    res.end(str);
+}).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+```
+LS9
+我们使用loadtest库来做一次压力测试，设置200并发量和100超时限制，新开一个终端执行以下命令
+> loadtest -c 200 -t 100  http://127.0.0.1:3000
+
+大概等个一分钟让它慢慢压测输出，结果如下
+> [Fri Jul 13 2018 09:10:36 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
+[Fri Jul 13 2018 09:10:41 GMT+0800 (中国标准时间)] INFO Requests: 4557, requests per second: 924, mean latency: 215.2 ms
+[Fri Jul 13 2018 09:10:46 GMT+0800 (中国标准时间)] INFO Requests: 9549, requests per second: 999, mean latency: 200.9 ms
+[Fri Jul 13 2018 09:10:51 GMT+0800 (中国标准时间)] INFO Requests: 14496, requests per second: 990, mean latency: 202.1 ms
+[Fri Jul 13 2018 09:10:56 GMT+0800 (中国标准时间)] INFO Requests: 19428, requests per second: 986, mean latency: 202.1 ms
+[Fri Jul 13 2018 09:11:01 GMT+0800 (中国标准时间)] INFO Requests: 24446, requests per second: 1004, mean latency: 199.6 ms
+[Fri Jul 13 2018 09:11:06 GMT+0800 (中国标准时间)] INFO Requests: 29462, requests per second: 1003, mean latency: 199.9 ms
+[Fri Jul 13 2018 09:11:11 GMT+0800 (中国标准时间)] INFO Requests: 34317, requests per second: 971, mean latency: 205.6 ms
+[Fri Jul 13 2018 09:11:16 GMT+0800 (中国标准时间)] INFO Requests: 39312, requests per second: 999, mean latency: 200.9 ms
+[Fri Jul 13 2018 09:11:21 GMT+0800 (中国标准时间)] INFO Requests: 44240, requests per second: 986, mean latency: 202.5 ms
+[Fri Jul 13 2018 09:11:26 GMT+0800 (中国标准时间)] INFO Requests: 49154, requests per second: 983, mean latency: 203.2 ms
+[Fri Jul 13 2018 09:11:31 GMT+0800 (中国标准时间)] INFO Requests: 54058, requests per second: 981, mean latency: 203.4 ms
+[Fri Jul 13 2018 09:11:36 GMT+0800 (中国标准时间)] INFO Requests: 59020, requests per second: 993, mean latency: 201.8 ms
+[Fri Jul 13 2018 09:11:41 GMT+0800 (中国标准时间)] INFO Requests: 63824, requests per second: 961, mean latency: 208.4 ms
+[Fri Jul 13 2018 09:11:46 GMT+0800 (中国标准时间)] INFO Requests: 68792, requests per second: 994, mean latency: 201.6 ms
+[Fri Jul 13 2018 09:11:51 GMT+0800 (中国标准时间)] INFO Requests: 73745, requests per second: 991, mean latency: 201 ms
+[Fri Jul 13 2018 09:11:56 GMT+0800 (中国标准时间)] INFO Requests: 78720, requests per second: 995, mean latency: 200.5 ms
+[Fri Jul 13 2018 09:12:01 GMT+0800 (中国标准时间)] INFO Requests: 83702, requests per second: 997, mean latency: 201.7 ms
+[Fri Jul 13 2018 09:12:06 GMT+0800 (中国标准时间)] INFO Requests: 88581, requests per second: 976, mean latency: 204.4 ms
+[Fri Jul 13 2018 09:12:11 GMT+0800 (中国标准时间)] INFO Requests: 93535, requests per second: 991, mean latency: 202.4 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Max time (s):        100
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Agent:               none
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Completed requests:  98416
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Total errors:        0
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Total time:          100.001323043 s
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Requests per second: 984
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Mean latency:        203 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   50%      201 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   90%      211 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   95%      216 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   99%      228 ms
+[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO  100%      343 ms (longest request)
+
+然后我们新建 lesson10 脚本在返回之前先把字符串转成BR对象，重复上面操作。
+```
+var http = require('http');
+
+let str = new Array(10 * 1024).join('a');
+str = Buffer.from(str);
+http.createServer(function(req, res) {
+    res.writeHead(200);
+    res.end(str);
+}).listen(3000);
+console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+```
+LS10
+压测结果如下
+> [Fri Jul 13 2018 09:18:52 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
+[Fri Jul 13 2018 09:18:57 GMT+0800 (中国标准时间)] INFO Requests: 4088, requests per second: 829, mean latency: 240 ms
+[Fri Jul 13 2018 09:19:02 GMT+0800 (中国标准时间)] INFO Requests: 8429, requests per second: 868, mean latency: 230.5 ms
+[Fri Jul 13 2018 09:19:07 GMT+0800 (中国标准时间)] INFO Requests: 12044, requests per second: 726, mean latency: 274.6 ms
+[Fri Jul 13 2018 09:19:12 GMT+0800 (中国标准时间)] INFO Requests: 16143, requests per second: 835, mean latency: 246.4 ms
+[Fri Jul 13 2018 09:19:17 GMT+0800 (中国标准时间)] INFO Requests: 20747, requests per second: 922, mean latency: 216.7 ms
+[Fri Jul 13 2018 09:19:22 GMT+0800 (中国标准时间)] INFO Requests: 25613, requests per second: 974, mean latency: 205.9 ms
+[Fri Jul 13 2018 09:19:27 GMT+0800 (中国标准时间)] INFO Requests: 30000, requests per second: 878, mean latency: 226.8 ms
+[Fri Jul 13 2018 09:19:32 GMT+0800 (中国标准时间)] INFO Requests: 34307, requests per second: 857, mean latency: 234.4 ms
+[Fri Jul 13 2018 09:19:37 GMT+0800 (中国标准时间)] INFO Requests: 38733, requests per second: 890, mean latency: 224.6 ms
+[Fri Jul 13 2018 09:19:42 GMT+0800 (中国标准时间)] INFO Requests: 43093, requests per second: 870, mean latency: 229.2 ms
+[Fri Jul 13 2018 09:19:47 GMT+0800 (中国标准时间)] INFO Requests: 47543, requests per second: 892, mean latency: 225.2 ms
+[Fri Jul 13 2018 09:19:52 GMT+0800 (中国标准时间)] INFO Requests: 52151, requests per second: 921, mean latency: 215.9 ms
+[Fri Jul 13 2018 09:19:57 GMT+0800 (中国标准时间)] INFO Requests: 57104, requests per second: 993, mean latency: 201.4 ms
+[Fri Jul 13 2018 09:20:02 GMT+0800 (中国标准时间)] INFO Requests: 62074, requests per second: 994, mean latency: 201.7 ms
+[Fri Jul 13 2018 09:20:07 GMT+0800 (中国标准时间)] INFO Requests: 67061, requests per second: 998, mean latency: 201.5 ms
+[Fri Jul 13 2018 09:20:12 GMT+0800 (中国标准时间)] INFO Requests: 71716, requests per second: 932, mean latency: 214.4 ms
+[Fri Jul 13 2018 09:20:17 GMT+0800 (中国标准时间)] INFO Requests: 76232, requests per second: 900, mean latency: 220.3 ms
+[Fri Jul 13 2018 09:20:22 GMT+0800 (中国标准时间)] INFO Requests: 80367, requests per second: 838, mean latency: 241.7 ms
+[Fri Jul 13 2018 09:20:27 GMT+0800 (中国标准时间)] INFO Requests: 84840, requests per second: 895, mean latency: 224.2 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Max time (s):        100
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Agent:               none
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Completed requests:  89464
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Total errors:        0
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Total time:          100.001980034 s
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Requests per second: 895
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Mean latency:        223.2 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   50%      214 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   90%      262 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   95%      291 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   99%      342 ms
+[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO  100%      419 ms (longest request)
+
+
+两次结果对比如下：
+
+|输出|字符串|BR对象|
+|-|-|-|
+| Completed requests| 98416| 89464|
+|Total time |100.001323043 s | 100.001980034 s|
+|Requests per second |984 |895 |
+|Mean latency |203 ms |223.2 ms |
+|50% |201 ms |214 ms |
+|90% |211 ms |262 ms |
+|95% |216 ms |291 ms |
+|99% |228 ms |342 ms |
+|100% |343 ms |419 ms |
+可以看到
+
+将页面的动态内容和静态内容分离，通过预先转换静态内容为BR对象可以有效减少CPU的重复使用，节省服务器资源。由于文件本身是二进制数据，在不需要改变情况下尽量读取BR直接传输，不做额外转换。
+
+
+### 文件读取
+上面提到过的文件读取中有个 highWaterMark设置 对性能也至关重要，例如 fs.createReadStream() 的工作方式是在内存中准备一段BR，然后在 fs.read() 读取时逐步从磁盘中将字节复制到BR中。完成一次读取时则从这个BR中通过 slice() 方法取出部分数据作为一个小BR对象，再通过data事件传递给调用方。如果BR用完则重新分配一个，否则继续使用。
+
+在理想状况下每次读取的长度就是用户指定的 highWaterMark设置 长度。但是可能读到文件结尾或者文件本身没有设置长度这么大，这个预先指定的BR对象将有部分剩余可以分配给下次使用。 pool 是常驻内存，只有当pool单元剩余数量小于128（kMinPoolSpace）字节时才会重新分配一个新的BR对象。NS源码如下：
+```
+if (!pool || pool.length - pool.used < kMinPoolSpace) {
+    // discard the old pool
+    pool = null;
+    allocNewPool(this._readableState.highWaterMark);
+}
+```
+
+这里与BR的内存分配比较类似，highWaterMark的大小影响如下：
+* 对BR内存的分配和使用有一定影响
+* 设置过小可能导致系统调用次数过多
+
+读取一个相同的大文件时候，highWaterMark的大小与读取速度成正比。
