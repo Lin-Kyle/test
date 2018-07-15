@@ -107,139 +107,160 @@ The results include mean response times and percentiles,
 so that you can abort deployment e.g. if 99% of the requests don't finish in 10 ms or less.
 
 `loadtest`是可扩展的。
-使用提供的API非常容易整合loadtest到你的包里进行负载测试。
+使用提供的API非常容易整合loadtest到你的包里进行编程负载测试。
 在部署新版本软件之前，loadtest使运行负载测试成为系统测试的一部分变得非常容易。
-结果包括平均响应时间和百分比，例如，如果99%的请求在10毫秒或更短的时间内没有完成。
+结果包括平均响应时间和百分比，以便你可以终止部署，例如，如果99%的请求在10毫秒或更短的时间内没有完成。
 
 
 ### 注意事项
 
-`loadtest` saturates a single CPU pretty quickly.
+>`loadtest` saturates a single CPU pretty quickly.
 Do not use `loadtest` if the Node.js process is above 100% usage in `top`, which happens approx. when your load is above 1000~4000 rps.
 (You can measure the practical limits of `loadtest` on your specific test machines by running it against a simple
 Apache or nginx process and seeing when it reaches 100% CPU.)
+
 `loadtest`会很快使单个CPU饱和。
 如果Node.js使用率已经超过100%不要使用`loadtest`，当你负载超过1000~4000rps会发生类似的事。
-（你可以运行指定的测试机器测量`loadtest`的实际极限通过简单的Apache 或者 nginx程序查看什么时候达到100%CPU。
+（你可以运行指定的测试机器测量`loadtest`的实际极限通过简单的Apache 或者 nginx进程查看什么时候达到100%CPU。
 
-There are better tools for that use case:
+> There are better tools for that use case:
+
 这些是使用示例更好的工具
 
 * [Apache `ab`](http://httpd.apache.org/docs/2.2/programs/ab.html)
 has great performance, but it is also limited by a single CPU performance.
 Its practical limit is somewhere around ~40 krps.
-性能优异，但是总是限制单个CPU性能。
-它的实际极限大概40krps。
+* ab性能优异，但是总是受限于单个CPU性能，它的实际极限大概40krps。
+
 * [weighttp](http://redmine.lighttpd.net/projects/weighttp/wiki) is also `ab`-compatible
 and is supposed to be very fast (the author has not personally used it).
-可以兼容`ab`并且快速支持（作者已经没有亲自维护了）
+* weighttp可以兼容`ab`并且快速支持（作者没有用过了）
 
 * [wrk](https://github.com/wg/wrk) is multithreaded and fit for use when multiple CPUs are required or available.
 It may need installing from source though, and its interface is not `ab`-compatible.
-当多个CPU需要或者可用的时候可用，它可能需要安装源文件并且不兼容`ab`。
+* wrk是多线程的，适合在需要或可用多个cpu时使用，它可能需要安装源文件并且不兼容`ab`。
 
 ### 常规用法
 
-The following parameters are compatible with Apache ab.
+> The following parameters are compatible with Apache ab.
+
 下面参数兼容Apache ab.
 
 #### `-n requests`
 
-Number of requests to send out.
+> Number of requests to send out.
+
 发送请求数量
 
-Note: the total number of requests sent can be bigger than the parameter if there is a concurrency parameter;
+> Note: the total number of requests sent can be bigger than the parameter if there is a concurrency parameter;
 loadtest will report just the first `n`.
-注意：如果这是一个并发参数请求发送总数量可能超过参数，loadtest会只报告第一个`n`.
+
+注意:如果有并发参数，发送的请求总数可以大于参数;loadtest将只报告第一个n。
 
 #### `-c concurrency`
 
-loadtest will create a certain number of clients; this parameter controls how many.
+> loadtest will create a certain number of clients; this parameter controls how many.
 Requests from them will arrive concurrently to the server.
-loadtest会创建一定数量的客户端，这参数控制具体多少。
-它们的请求会同时到达服务端。
 
-Note: requests are not sent in parallel (from different processes),
+loadtest会创建一定数量的客户端，这参数控制具体多少。
+它们的请求会并发到达服务端。
+
+> Note: requests are not sent in parallel (from different processes),
 but concurrently (a second request may be sent before the first has been answered).
-注意：请求实际上没有发送（来自不同的进程），
-但是同时（一秒钟请求可能在第一个响应之前发送）
+
+注意：请求实际上没有并行发送（来自不同的进程），
+但是并发（第二个请求在第一个请求响应之前发送）
 
 #### `-t timelimit`
 
-Max number of seconds to wait until requests no longer go out.
+> Max number of seconds to wait until requests no longer go out.
+
 等待直到请求不再发送的时间
 
-Note: this is different than Apache `ab`, which stops _receiving_ requests after the given seconds.
+> Note: this is different than Apache `ab`, which stops _receiving_ requests after the given seconds.
+
 注意：这里不同于`ab`，后者会在给定时间后停止接收请求。
 
 #### `-k` or `--keepalive`
 
-Open connections using keep-alive: use header 'Connection: Keep-alive' instead of 'Connection: Close'.
-使用长连接打开，使用请求头 'Connection: Keep-alive' instead of 'Connection: Close'.
+>Open connections using keep-alive: use header 'Connection: Keep-alive' instead of 'Connection: Close'.
 
-Note: Uses [agentkeepalive](https://npmjs.org/package/agentkeepalive),
+使用keepalive打开连接，使用请求头 'Connection: Keep-alive' instead of 'Connection: Close'.
+
+> Note: Uses [agentkeepalive](https://npmjs.org/package/agentkeepalive),
 which performs better than the default node.js agent.
+
 注意：使用[agentkeepalive](https://npmjs.org/package/agentkeepalive)会好过默认的node.js代理。
 
 #### `-C cookie-name=value`
 
-Send a cookie with the request. The cookie `name=value` is then sent to the server.
+> Send a cookie with the request. The cookie `name=value` is then sent to the server.
 This parameter can be repeated as many times as needed.
+
 发送请求cookie，`name=value`会被发送到服务端。
-这个参数能够重复多次使用。
+这个参数能够根据需要重复使用。
 
 #### `-H header:value`
 
-Send a custom header with the request. The line `header:value` is then sent to the server.
+> Send a custom header with the request. The line `header:value` is then sent to the server.
 This parameter can be repeated as many times as needed.
-发送定制请求头，这行的`header:value`会被发送到服务端。
-这个参数能够重复多次使用。
-Example:
 
+发送自定义请求头的请求，这行的`header:value`会被发送到服务端。
+这个参数能够重复多次使用。
+
+Example:
 
     $ loadtest -H user-agent:tester/0.4 ...
 
-Note: if not present, loadtest will add a few headers on its own: the "host" header parsed from the URL,
+> Note: if not present, loadtest will add a few headers on its own: the "host" header parsed from the URL,
 a custom user agent "loadtest/" plus version (`loadtest/1.1.0`), and an accept header for "\*/\*".
-注意：如果没有发送，loadtest会附加一些自己的头信息。从URL解析出来的“host”头，一个定制的代理"loadtest/"附加版本(`loadtest/1.1.0`)，可接受"\*/\*"头。
 
-Note: when the same header is sent several times, only the last value will be considered.
+注意：如果不存在，loadtest会附加一些自己的头信息。从URL解析出来的“host”头，一个自定义的用户代理"loadtest/"附加版本(`loadtest/1.1.0`)，可接受"\*/\*"头。
+
+> Note: when the same header is sent several times, only the last value will be considered.
 If you want to send multiple values with a header, separate them with semicolons:
+
 注意：当同一个头发送给服务端几次，只有最后的值会被考虑。
 如果你想一个头发送多个值，使用分号分割。
 
     $ loadtest -H accept:text/plain;text-html ...
 
-Note: if you need to add a header with spaces, be sure to surround both header and value with quotes:
-注意：如果你需要添加空格头，确保引号包裹着两个头和值；
+> Note: if you need to add a header with spaces, be sure to surround both header and value with quotes:
+
+注意：如果你需要添加空格头，确保引号包裹着头和值两端；
 
     $ loadtest -H "Authorization: Basic xxx=="
 
 #### `-T content-type`
 
-Set the MIME content type for POST data. Default: `text/plain`.
+> Set the MIME content type for POST data. Default: `text/plain`.
+
 设置POST提交数据的MIME内容类型，默认: `text/plain`.
 
 #### `-P POST-body`
 
-Send the string as the POST body. E.g.: `-P '{"key": "a9acf03f"}'`
+> Send the string as the POST body. E.g.: `-P '{"key": "a9acf03f"}'`
+
 发送一段字符串作为POST请求体，例如: `-P '{"key": "a9acf03f"}'`
 
 #### `-A PATCH-body`
 
-Send the string as the PATCH body. E.g.: `-A '{"key": "a9acf03f"}'`
+> Send the string as the PATCH body. E.g.: `-A '{"key": "a9acf03f"}'`
+
 发送一段字符串作为PATCH请求体，例如: `-A '{"key": "a9acf03f"}'`
 
 
 #### `-m method`
 
-Send method to link. Accept: [GET, POST, PUT, DELETE, PATCH, get, post, put, delete, patch], Default is GET
+> Send method to link. Accept: [GET, POST, PUT, DELETE, PATCH, get, post, put, delete, patch], Default is GET
 E.g.: -m POST
-发送连接链接。可接受[GET, POST, PUT, DELETE, PATCH, get, post, put, delete, patch]，默认是GET，例如：-m POST
+
+发送到链接的方法。可接受[GET, POST, PUT, DELETE, PATCH, get, post, put, delete, patch]，默认是GET，例如：-m POST
 
 #### `--data POST some variables`
 
-Send some data. It does not support method GET.
+> Send some data. It does not support method GET.
+
 发送一些数据，不支持方法GET
 E.g: `--data '{"username": "test", "password": "test"}' -T 'application/x-www-form-urlencoded' -m POST`
 
