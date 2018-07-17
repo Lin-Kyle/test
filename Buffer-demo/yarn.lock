@@ -160,7 +160,7 @@ kind-of@^6.0.2:
 
 loadtest@^3.0.3:
   version "3.0.3"
-  resolved "http://registry.npm.taobao.org/loadtest/download/loadtest-3.0.3.tgz#51540979867e9f513136fff602efcc5550489d4b"
+  resolved "http://r.cnpmjs.org/loadtest/download/loadtest-3.0.3.tgz#51540979867e9f513136fff602efcc5550489d4b"
   dependencies:
     agentkeepalive "^2.0.3"
     log "1.4.*"

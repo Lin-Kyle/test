@@ -1,4 +1,4 @@
-# BR介绍
+## BR介绍
 > 在 [ECMAScript 2015] (ES6) 引入 TypedArray 之前，JavaScript 语言没有读取或操作二进制数据流的机制。 Buffer 类被引入作为 Node.js API 的一部分，使其可以在 TCP 流或文件系统操作等场景中处理二进制数据流。
 
 > TypedArray 现已被添加进 ES6 中，Buffer 类以一种更优化、更适合 Node.js 用例的方式实现了 Uint8Array API。
@@ -7,9 +7,9 @@
 
 > Buffer 类在 Node.js 中是一个全局变量，因此无需使用 require('buffer').Buffer。
 
-(摘自Nodejs中文API)
+(摘自[Nodejs中文API](http://nodejs.cn/api/buffer.html))
 
-虽然全文基于《Nodejs深入浅出》，但是因为有段年头所以有些API已经是被废弃的，所以这里的demo都是以Nodejs10为准。
+虽然全文基于《Nodejs深入浅出》，但是因为有段年头有些API已经是被废弃的，所以这里的demo都是以Nodejs10为准。
 
 
 ## ~~new Buffer()~~
@@ -21,18 +21,23 @@
 
 为了使 Buffer 实例的创建更可靠、更不容易出错，各种 new Buffer() 构造函数已被 废弃，并由 Buffer.from()、Buffer.alloc()、和 Buffer.allocUnsafe() 方法替代。
 
+总的来说废弃原因有：
+1，内存没有初始化且可能包含敏感数据；
+2，引入安全性与可靠性问题；
+
 
 
 ## 类方法：Buffer.from()
 使用入参较为品类众多。
-### Buffer.from(array)
-    返回一个被 array 的值初始化的新的 Buffer 实例 ，非数组入参则抛出 TypeError 错误。
 
-    ```
-    // 创建一个新的包含字符串 'buffer' 的 UTF-8 字节的 Buffer
-    const buf = Buffer.from([0x62, 0x75, 0x66, 0x66, 0x65, 0x72]);
-    console.log(buf.toString());//buffer
-    ```
+### Buffer.from(array)
+返回一个新建的包含所提供的字节数组的副本的 Buffer。
+
+```
+// 创建一个新的包含字符串 'buffer' 的 UTF-8 字节的 Buffer
+const buf = Buffer.from([0x62, 0x75, 0x66, 0x66, 0x65, 0x72]);
+console.log(buf.toString());//buffer
+```
 
 ---
 
@@ -40,11 +45,12 @@
 
 |参数|描述|
 |-|-|
-|arrayBuffer  (ArrayBuffer，SharedArrayBuffer) | ArrayBuffer 或 SharedArrayBuffer 或 TypedArray 的 .buffer 属性|
-|byteOffset (integer) | 开始拷贝的索引。默认为 0 |
-|length  (integer) |拷贝的字节数。默认为 arrayBuffer.length - byteOffset |
+|arrayBuffer  [ArrayBuffer，SharedArrayBuffer] | ArrayBuffer 或 SharedArrayBuffer 或 TypedArray 的 .buffer 属性|
+|byteOffset [integer] | 开始拷贝的索引。默认为 0 |
+|length [integer] |拷贝的字节数。默认为 arrayBuffer.length - byteOffset |
 
-返回一个新建的与给定的 ArrayBuffer 共享同一内存的 Buffer，非 ArrayBuffer 或 SharedArrayBuffer 入参则抛出 TypeError 错误。
+该方法将创建一个 ArrayBuffer 的视图，而不会复制底层内存。
+例如，当传入一个 TypedArray 实例的 .buffer 属性的引用时，这个新建的 Buffer 会像 TypedArray 那样共享同一分配的内存。
 
 ```
 const arr = new Uint16Array(2);
@@ -71,7 +77,7 @@ console.log('修改arr后：', buf);
 ---
 
 ### Buffer.from(buffer)
-复制传入的 Buffer 实例的数据，并返回一个新的 Buffer 实例,非 buffer 入参则抛出 TypeError 错误
+复制传入的 Buffer 实例的数据，并返回一个新的 Buffer 实例。
 
 ```
 const buf1 = Buffer.from('buffer'),
@@ -93,9 +99,9 @@ console.log('buf2： ', buf2.toString());
 |参数|描述|
 |-|-|
 |string | 编码字符串|
-|encoding (string) | string 的字符编码。 默认: 'utf8' |
+|encoding [string] | string 的字符编码。 默认: 'utf8' |
 
-返回一个被 string 的值初始化的新的 Buffer 实例，非 string 入参则抛出 TypeError 错误。
+返回一个被 string 的值初始化的新的 Buffer 实例。
 
 ```
 const buf1 = Buffer.from('this is a tést');
@@ -118,11 +124,9 @@ console.log(buf2.toString());
 ### 类方法：Buffer.alloc(size[, fill[, encoding]])
 |参数|描述|
 |-|-|
-|size (integer) | Buffer长度|
-|fill (string，Buffer，integer) | 预填充值，默认：0 |
-|encoding (string) |如果 fill 是字符串，则该值是它的字符编码。 默认：'utf8' |
-
-
+|size [integer] | Buffer长度|
+|fill [string，Buffer，integer] | 预填充值，默认：0 |
+|encoding [string]|如果 fill 是字符串，则该值是它的字符编码。 默认：'utf8' |
 
 分配一个大小为 size 字节的新建的 Buffer，后期也可以通过BR对象的toString()转换编码。
 
@@ -150,26 +154,7 @@ const buf = Buffer.alloc(-1);
 //     at bootstrapNodeJSCore (internal/bootstrap/node.js:572:3)
 ```
 
-如果 size 不是一个数值，则抛出 TypeError 错误。
 
-```
-const buf = Buffer.from('abc');
-// buffer.js:269
-//     throw err;
-//     ^
-//
-// TypeError [ERR_INVALID_ARG_TYPE]: The "size" argument must be of type number. Received type string
-//     at Function.alloc (buffer.js:278:3)
-//     at Object.<anonymous> (C:\project\test\Buffer-demo\lesson1.js:1:82)
-//     at Module._compile (internal/modules/cjs/loader.js:702:30)
-//     at Object.Module._extensions..js (internal/modules/cjs/loader.js:713:10)
-//     at Module.load (internal/modules/cjs/loader.js:612:32)
-//     at tryModuleLoad (internal/modules/cjs/loader.js:551:12)
-//     at Function.Module._load (internal/modules/cjs/loader.js:543:3)
-//     at Function.Module.runMain (internal/modules/cjs/loader.js:744:10)
-//     at startup (internal/bootstrap/node.js:238:19)
-//     at bootstrapNodeJSCore (internal/bootstrap/node.js:572:3)
-```
 
 
 ### 类方法：Buffer.allocUnsafe(size)
@@ -226,11 +211,21 @@ socket.on('readable', () => {
 Buffer.allocUnsafeSlow() 应当仅仅作为开发者已经在他们的应用程序中观察到过度的内存保留之后的终极手段使用。
 
 
+
+### 对比
+| 区别     | from  | alloc | allocUnsafe | allocUnsafeSlow|
+| -------- | ---------------------------------- | ----- | ----------- |--|
+| 入参类型 | array，arrayBuffer，Buffer，string | size  | size | size|
+| 返回  | 返回新建包含所提供入参副本的 Buffer  | 返回指定大小被填满的 Buffer 。 速度较慢但可确保不包含敏感数据。  | 返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据 |返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据|
+| 内存分配     | C++内存分配  | alloc | 分配内存小于或等于 Buffer.poolSize >> 1，从Buffer 模块预分配大小为 Buffer.poolSize 的快速分配池分配 | C++内存分配|
+
+
+
 ### 类方法：Buffer.concat(list[, totalLength])
 |参数|描述|
 |-|-|
-|list (Array) | 要合并的 Buffer 或 Uint8Array 实例的数组|
-|totalLength (integer) |合并时 list 中 Buffer 实例的总长度|
+|list [Array] | 要合并的 Buffer 或 Uint8Array 实例的数组|
+|totalLength [integer] |合并时 list 中 Buffer 实例的总长度|
 返回一个合并了 list 中所有 Buffer 实例的新建的 Buffer 。
 
 * 如果 list 中没有元素、或 totalLength 为 0 ，则返回一个新建的长度为 0 的 Buffer 。
@@ -289,6 +284,8 @@ Buffer.concat = function(list, length) {
 BR是一個典型的JS與C++結合的模塊，性能部分用C++實現，非性能部分用JS實現。因爲屬於核心模塊，所以NS在進程啓動的時候就已經加載好了，所以無需引入直接使用。
 上次說過因爲BR屬於非V8分配的堆外内存，所以非常適用於大多數場景下的大内存操作。
 
+NS内存有关文章请看[Nodejs内存控制](https://www.qdfuns.com/article/40831/8004b9968520abc963e2f954fffd5d7f.html)
+
 ## BR對象
 BR對象類似數組，它的元素為16進制的兩位數，即0~255的數值。
 ```
@@ -340,37 +337,50 @@ function allocPool(){
 }
 ```
 
-|--------------------------------------------| 8KB的pool
+> |--------------------------------------------| 8KB的pool
 |
-user：0
+used：0
 
 当前slab处于empty状态，构造小BR对象的时候会去检查pool对象，如果pool没有被创建将会创建新的slab单元指向它。
+同时当前BR对象的parent属性指向该slab，并记录下是从这个slab的哪个位置（offset）开始使用，slab对象也会记录自身使用了多少字节。源码如下。
 ```
-Buffer.from(1024);
-if (!pool || pool.length - pool.used < this.length) allocPool();
-```
-同时当前BR对象的parent属性指向该slab，并记录下是从这个slab的哪个位置（offset）开始使用，slab对象也会记录自身使用了多少字节。
-```
-this.parent = pool;
-this.offset = pool.used;
-this.used = this.length;
-if(pool.used & 7) pool.used = (pool.used + 8) & ~7;
+function allocate(size) {
+    //检查入参
+    if (size <= 0) {
+        return new FastBuffer();
+    }
+    //检查阈值
+    if (size < (Buffer.poolSize >>> 1)) {
+        //检查pool对象
+        if (size > (poolSize - poolOffset))
+            createPool();
+        var b = new FastBuffer(allocPool, poolOffset, size);
+        //记录位置
+        poolOffset += size;
+        alignPool();
+        return b;
+    } else {
+        return createUnsafeBuffer(size);
+    }
+}
 ```
 
 offset：0
 |
 |||||||||||||||---------------------------------------| 8KB的pool
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
-user：1024
+user：1024B
 
 这时候的slab状态为partial，当再次创建一个BR对象时，构造过程会判断这个slab剩余空间是否足够使用并更新分配状态，如果不够会构建新的slab，原有slab的剩余空间就被浪费了。
 
 例如分别构建1个字节和8192字节
 ```
-Buffer.from(1);//剩余8191字节被浪费了
-Buffer.from(8192);
+Buffer.alloc(1);
+//<Buffer 00>剩余8191字节被浪费了
+Buffer.alloc(8192);
+//<Buffer 00 ... 00>
 ```
-除非slab上的BR对象都被释放且可回收，否则即使只有一个字节实际上可能占据8KB内存。
+除非slab上的BR对象都被释放且可回收，否则即使只有一个字节实际上也可能会占据8KB内存。
 
 
 ### 分配大对象
@@ -407,7 +417,7 @@ JS层面只是提供给使用BR对象，真正的内存还是NS的C++层面提�
 
 ### 字符串转Buffer
 字符串转Buffer主要通过构造函数完成,这种方式只能存储一种编码类型。
-> Buffer.from(arrayBuffer[, byteOffset[, length]])
+> Buffer.from(string[, encoding])
 
 一个BR对象可以存储不同编码类型的字符串转码值，需要调用到 write() 方法。
 > buf.write(string[, offset[, length]][, encoding])
@@ -415,16 +425,15 @@ JS层面只是提供给使用BR对象，真正的内存还是NS的C++层面提�
 |参数|描述|
 |-|-|
 |string | 写入 buf 的字符串|
-|offset (integer) | 开始写入 string 前要跳过的字节数。默认: 0|
-|length (integer) | 写入的字节数。默认: buf.length - offset|
-|encoding (string) | string 的字符编码。默认: 'utf8'|
+|offset [integer] | 开始写入 string 前要跳过的字节数。默认: 0|
+|length [integer] | 写入的字节数。默认: buf.length - offset|
+|encoding [string] | string 的字符编码。默认: 'utf8'|
 根据 encoding 的字符编码写入 string 到 buf 中的 offset 位置。 length 参数是写入的字节数。 如果 buf 没有足够的空间保存整个字符串，则只会写入 string 的一部分。 只部分解码的字符不会被写入。
 ```
-const buf = Buffer.allocUnsafe(256);
+const buf = Buffer.alloc(256);
 
 const len = buf.write('\u00bd + \u00bc = \u00be', 0);
 
-// 输出: 12 个字节: ½ + ¼ = ¾
 console.log(`${len} 个字节: ${buf.toString('utf8', 0, len)}`);
 //12 个字节: ½ + ¼ = ¾
 ```
@@ -438,10 +447,19 @@ console.log(`${len} 个字节: ${buf.toString('utf8', 0, len)}`);
 const buf = Buffer.from('Buffer對象。');
 console.log(buf);
 console.log(buf.toString('base64'));
+//<Buffer 42 75 66 66 65 72 e5 b0 8d e8 b1 a1 e3 80 82>
+//QnVmZmVy5bCN6LGh44CC
 ```
 
 ### BR编码兼容
 NS的BR对象支持的编码类型有限，只有少数几种支持在字符串和BR之间转换，BR提供了  isEncoding() 判断编码是否支持转换。
+
+```
+console.log(Buffer.isEncoding('utf8'));
+console.log(Buffer.isEncoding('abc'));
+// true
+// false
+```
 
 对于不支持的编码类型也有很多模块库可以实现，例如
 [iconv-js](https://github.com/Hikaru02/iconv-js)：通过C++调用libiconv库完成
@@ -455,12 +473,16 @@ NS的BR对象支持的编码类型有限，只有少数几种支持在字符串�
 var iconv = require('iconv-lite');
 
 // Convert from an encoded buffer to js string.
-str = iconv.decode(Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]), 'win1251');
+str = iconv.decode(Buffer.from('ça va'), 'win1251');
 
 // Convert from js string to an encoded buffer.
-buf = iconv.encode("Sample input string", 'win1251');
+buf = iconv.encode("ça va", 'win1251');
 
-console.log(str,buf);
+console.log(str, buf);
+// Check if encoding is supported
+iconv.encodingExists("us-ascii")
+
+//Г§a va <Buffer 3f 61 20 76 61>
 ```
 LS1
 同时还提供一个函数判断该模块是否支持某种编码类型
@@ -619,7 +641,7 @@ rs.on("end", function() {
 });
 ```
 LS3
-现在我们能看到数不清�乱码出现了。
+现在我们能看到数不清的�乱码出现了。
 
 ### 乱码如何产生
 我们都知道从 fs.createReadStream() 读取出来的是BR对象，由于我们限定了读取字节数因此会发生截断BR的情况，所以当每段截取BR在输出的时候那些无法形成文字的只能显示乱码，这就是为什么乱码的位置零零散散遍布全文。
@@ -674,8 +696,10 @@ LS5
 ### StringDecoder 类
 * new StringDecoder([encoding])
     创建一个新的 StringDecoder 实例，把 Buffer 对象解码成字符串，但会保留编码过的多字节 UTF-8 与 UTF-16 字符
+
 * stringDecoder.end([buffer])
     以字符串的形式返回内部 buffer 中剩余的字节，残缺的 UTF-8 与 UTF-16 字符的字节会被替换成符合字符编码的字符，如果提供了 buffer 参数，则在返回剩余字节之前会再执行一次 stringDecoder.write()。
+
 * stringDecoder.write(buffer)
     返回一个解码后的字符串，并确保返回的字符串不包含 Buffer 末尾残缺的多字节字符，残缺的多字节字符会被保存在一个内部的 buffer 中用于下次调用 stringDecoder.write() 或 stringDecoder.end()。
 
@@ -732,6 +756,7 @@ rs.on("end", function() {
 });
 ```
 LS8
+依赖库也能实现想要的输出结果了。
 
 
 ## 性能
@@ -749,51 +774,53 @@ http.createServer(function(req, res) {
     res.writeHead(200);
     res.end(str);
 }).listen(3000);
-console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+console.log('已建立连接，现在可以新开一个终端运行loadtest命令测试效果。');
 ```
 LS9
-我们使用loadtest库来做一次压力测试，设置200并发量和100超时限制，新开一个终端执行以下命令
+我们使用loadtest库来做一次压力测试，设置100秒内200并发量，新开一个终端执行以下命令
 > loadtest -c 200 -t 100  http://127.0.0.1:3000
 
-大概等个一分钟让它慢慢压测输出，结果如下
-> [Fri Jul 13 2018 09:10:36 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
-[Fri Jul 13 2018 09:10:41 GMT+0800 (中国标准时间)] INFO Requests: 4557, requests per second: 924, mean latency: 215.2 ms
-[Fri Jul 13 2018 09:10:46 GMT+0800 (中国标准时间)] INFO Requests: 9549, requests per second: 999, mean latency: 200.9 ms
-[Fri Jul 13 2018 09:10:51 GMT+0800 (中国标准时间)] INFO Requests: 14496, requests per second: 990, mean latency: 202.1 ms
-[Fri Jul 13 2018 09:10:56 GMT+0800 (中国标准时间)] INFO Requests: 19428, requests per second: 986, mean latency: 202.1 ms
-[Fri Jul 13 2018 09:11:01 GMT+0800 (中国标准时间)] INFO Requests: 24446, requests per second: 1004, mean latency: 199.6 ms
-[Fri Jul 13 2018 09:11:06 GMT+0800 (中国标准时间)] INFO Requests: 29462, requests per second: 1003, mean latency: 199.9 ms
-[Fri Jul 13 2018 09:11:11 GMT+0800 (中国标准时间)] INFO Requests: 34317, requests per second: 971, mean latency: 205.6 ms
-[Fri Jul 13 2018 09:11:16 GMT+0800 (中国标准时间)] INFO Requests: 39312, requests per second: 999, mean latency: 200.9 ms
-[Fri Jul 13 2018 09:11:21 GMT+0800 (中国标准时间)] INFO Requests: 44240, requests per second: 986, mean latency: 202.5 ms
-[Fri Jul 13 2018 09:11:26 GMT+0800 (中国标准时间)] INFO Requests: 49154, requests per second: 983, mean latency: 203.2 ms
-[Fri Jul 13 2018 09:11:31 GMT+0800 (中国标准时间)] INFO Requests: 54058, requests per second: 981, mean latency: 203.4 ms
-[Fri Jul 13 2018 09:11:36 GMT+0800 (中国标准时间)] INFO Requests: 59020, requests per second: 993, mean latency: 201.8 ms
-[Fri Jul 13 2018 09:11:41 GMT+0800 (中国标准时间)] INFO Requests: 63824, requests per second: 961, mean latency: 208.4 ms
-[Fri Jul 13 2018 09:11:46 GMT+0800 (中国标准时间)] INFO Requests: 68792, requests per second: 994, mean latency: 201.6 ms
-[Fri Jul 13 2018 09:11:51 GMT+0800 (中国标准时间)] INFO Requests: 73745, requests per second: 991, mean latency: 201 ms
-[Fri Jul 13 2018 09:11:56 GMT+0800 (中国标准时间)] INFO Requests: 78720, requests per second: 995, mean latency: 200.5 ms
-[Fri Jul 13 2018 09:12:01 GMT+0800 (中国标准时间)] INFO Requests: 83702, requests per second: 997, mean latency: 201.7 ms
-[Fri Jul 13 2018 09:12:06 GMT+0800 (中国标准时间)] INFO Requests: 88581, requests per second: 976, mean latency: 204.4 ms
-[Fri Jul 13 2018 09:12:11 GMT+0800 (中国标准时间)] INFO Requests: 93535, requests per second: 991, mean latency: 202.4 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Max time (s):        100
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Agent:               none
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Completed requests:  98416
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Total errors:        0
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Total time:          100.001323043 s
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Requests per second: 984
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Mean latency:        203 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   50%      201 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   90%      211 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   95%      216 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO   99%      228 ms
-[Fri Jul 13 2018 09:12:16 GMT+0800 (中国标准时间)] INFO  100%      343 ms (longest request)
+不知道是什么东西的话可以看我直接翻译文档[Loadtest库做负载测试](https://www.qdfuns.com/article/40831/75977ca4560375091f4232792ca0b646.html)
+
+大概等个100秒让它慢慢压测输出，结果大概如下
+> [Tue Jul 17 2018 16:28:42 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
+[Tue Jul 17 2018 16:28:47 GMT+0800 (中国标准时间)] INFO Requests: 4829, requests per second: 979, mean latency: 203.1 ms
+[Tue Jul 17 2018 16:28:52 GMT+0800 (中国标准时间)] INFO Requests: 9933, requests per second: 1021, mean latency: 196.2 ms
+[Tue Jul 17 2018 16:28:57 GMT+0800 (中国标准时间)] INFO Requests: 15070, requests per second: 1028, mean latency: 195.3 ms
+[Tue Jul 17 2018 16:29:02 GMT+0800 (中国标准时间)] INFO Requests: 20257, requests per second: 1038, mean latency: 193.2 ms
+[Tue Jul 17 2018 16:29:07 GMT+0800 (中国标准时间)] INFO Requests: 25397, requests per second: 1029, mean latency: 193.1 ms
+[Tue Jul 17 2018 16:29:12 GMT+0800 (中国标准时间)] INFO Requests: 30598, requests per second: 1041, mean latency: 192.3 ms
+[Tue Jul 17 2018 16:29:17 GMT+0800 (中国标准时间)] INFO Requests: 35838, requests per second: 1049, mean latency: 191.3 ms
+[Tue Jul 17 2018 16:29:22 GMT+0800 (中国标准时间)] INFO Requests: 40987, requests per second: 1032, mean latency: 194.4 ms
+[Tue Jul 17 2018 16:29:27 GMT+0800 (中国标准时间)] INFO Requests: 46127, requests per second: 1029, mean latency: 193.9 ms
+[Tue Jul 17 2018 16:29:32 GMT+0800 (中国标准时间)] INFO Requests: 51312, requests per second: 1038, mean latency: 193.6 ms
+[Tue Jul 17 2018 16:29:37 GMT+0800 (中国标准时间)] INFO Requests: 56521, requests per second: 1044, mean latency: 192.2 ms
+[Tue Jul 17 2018 16:29:42 GMT+0800 (中国标准时间)] INFO Requests: 61700, requests per second: 1036, mean latency: 192.7 ms
+[Tue Jul 17 2018 16:29:47 GMT+0800 (中国标准时间)] INFO Requests: 66925, requests per second: 1046, mean latency: 191.6 ms
+[Tue Jul 17 2018 16:29:52 GMT+0800 (中国标准时间)] INFO Requests: 72080, requests per second: 1032, mean latency: 193.2 ms
+[Tue Jul 17 2018 16:29:57 GMT+0800 (中国标准时间)] INFO Requests: 77284, requests per second: 1042, mean latency: 192.8 ms
+[Tue Jul 17 2018 16:30:02 GMT+0800 (中国标准时间)] INFO Requests: 82519, requests per second: 1048, mean latency: 191.1 ms
+[Tue Jul 17 2018 16:30:07 GMT+0800 (中国标准时间)] INFO Requests: 87754, requests per second: 1048, mean latency: 191 ms
+[Tue Jul 17 2018 16:30:12 GMT+0800 (中国标准时间)] INFO Requests: 93009, requests per second: 1052, mean latency: 190 ms
+[Tue Jul 17 2018 16:30:17 GMT+0800 (中国标准时间)] INFO Requests: 98237, requests per second: 1046, mean latency: 191.5 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Max time (s):        100
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Agent:               none
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Completed requests:  103447
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Total errors:        0
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Total time:          100.000453852 s
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Requests per second: 1034
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Mean latency:        193.1 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO   50%      192 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO   90%      198 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO   95%      201 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO   99%      209 ms
+[Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO  100%      313 ms (longest request)
 
 然后我们新建 lesson10 脚本在返回之前先把字符串转成BR对象，重复上面操作。
 ```
@@ -801,52 +828,53 @@ var http = require('http');
 
 let str = new Array(10 * 1024).join('a');
 str = Buffer.from(str);
+
 http.createServer(function(req, res) {
     res.writeHead(200);
     res.end(str);
 }).listen(3000);
-console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+console.log('已建立连接，现在可以新开一个终端运行loadtest命令测试效果。');
 ```
 LS10
 压测结果如下
-> [Fri Jul 13 2018 09:18:52 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
-[Fri Jul 13 2018 09:18:57 GMT+0800 (中国标准时间)] INFO Requests: 4088, requests per second: 829, mean latency: 240 ms
-[Fri Jul 13 2018 09:19:02 GMT+0800 (中国标准时间)] INFO Requests: 8429, requests per second: 868, mean latency: 230.5 ms
-[Fri Jul 13 2018 09:19:07 GMT+0800 (中国标准时间)] INFO Requests: 12044, requests per second: 726, mean latency: 274.6 ms
-[Fri Jul 13 2018 09:19:12 GMT+0800 (中国标准时间)] INFO Requests: 16143, requests per second: 835, mean latency: 246.4 ms
-[Fri Jul 13 2018 09:19:17 GMT+0800 (中国标准时间)] INFO Requests: 20747, requests per second: 922, mean latency: 216.7 ms
-[Fri Jul 13 2018 09:19:22 GMT+0800 (中国标准时间)] INFO Requests: 25613, requests per second: 974, mean latency: 205.9 ms
-[Fri Jul 13 2018 09:19:27 GMT+0800 (中国标准时间)] INFO Requests: 30000, requests per second: 878, mean latency: 226.8 ms
-[Fri Jul 13 2018 09:19:32 GMT+0800 (中国标准时间)] INFO Requests: 34307, requests per second: 857, mean latency: 234.4 ms
-[Fri Jul 13 2018 09:19:37 GMT+0800 (中国标准时间)] INFO Requests: 38733, requests per second: 890, mean latency: 224.6 ms
-[Fri Jul 13 2018 09:19:42 GMT+0800 (中国标准时间)] INFO Requests: 43093, requests per second: 870, mean latency: 229.2 ms
-[Fri Jul 13 2018 09:19:47 GMT+0800 (中国标准时间)] INFO Requests: 47543, requests per second: 892, mean latency: 225.2 ms
-[Fri Jul 13 2018 09:19:52 GMT+0800 (中国标准时间)] INFO Requests: 52151, requests per second: 921, mean latency: 215.9 ms
-[Fri Jul 13 2018 09:19:57 GMT+0800 (中国标准时间)] INFO Requests: 57104, requests per second: 993, mean latency: 201.4 ms
-[Fri Jul 13 2018 09:20:02 GMT+0800 (中国标准时间)] INFO Requests: 62074, requests per second: 994, mean latency: 201.7 ms
-[Fri Jul 13 2018 09:20:07 GMT+0800 (中国标准时间)] INFO Requests: 67061, requests per second: 998, mean latency: 201.5 ms
-[Fri Jul 13 2018 09:20:12 GMT+0800 (中国标准时间)] INFO Requests: 71716, requests per second: 932, mean latency: 214.4 ms
-[Fri Jul 13 2018 09:20:17 GMT+0800 (中国标准时间)] INFO Requests: 76232, requests per second: 900, mean latency: 220.3 ms
-[Fri Jul 13 2018 09:20:22 GMT+0800 (中国标准时间)] INFO Requests: 80367, requests per second: 838, mean latency: 241.7 ms
-[Fri Jul 13 2018 09:20:27 GMT+0800 (中国标准时间)] INFO Requests: 84840, requests per second: 895, mean latency: 224.2 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Max time (s):        100
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Agent:               none
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Completed requests:  89464
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Total errors:        0
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Total time:          100.001980034 s
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Requests per second: 895
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Mean latency:        223.2 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   50%      214 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   90%      262 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   95%      291 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO   99%      342 ms
-[Fri Jul 13 2018 09:20:32 GMT+0800 (中国标准时间)] INFO  100%      419 ms (longest request)
+> [Tue Jul 17 2018 16:23:45 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
+[Tue Jul 17 2018 16:23:49 GMT+0800 (中国标准时间)] INFO Requests: 4718, requests per second: 959, mean latency: 208.2 ms
+[Tue Jul 17 2018 16:23:54 GMT+0800 (中国标准时间)] INFO Requests: 9782, requests per second: 1013, mean latency: 197.7 ms
+[Tue Jul 17 2018 16:23:59 GMT+0800 (中国标准时间)] INFO Requests: 14893, requests per second: 1023, mean latency: 195.7 ms
+[Tue Jul 17 2018 16:24:04 GMT+0800 (中国标准时间)] INFO Requests: 20027, requests per second: 1027, mean latency: 194.4 ms
+[Tue Jul 17 2018 16:24:09 GMT+0800 (中国标准时间)] INFO Requests: 24891, requests per second: 969, mean latency: 204.9 ms
+[Tue Jul 17 2018 16:24:14 GMT+0800 (中国标准时间)] INFO Requests: 29683, requests per second: 965, mean latency: 209.8 ms
+[Tue Jul 17 2018 16:24:19 GMT+0800 (中国标准时间)] INFO Requests: 34509, requests per second: 966, mean latency: 207.4 ms
+[Tue Jul 17 2018 16:24:24 GMT+0800 (中国标准时间)] INFO Requests: 39384, requests per second: 977, mean latency: 204.6 ms
+[Tue Jul 17 2018 16:24:29 GMT+0800 (中国标准时间)] INFO Requests: 44280, requests per second: 980, mean latency: 203.9 ms
+[Tue Jul 17 2018 16:24:34 GMT+0800 (中国标准时间)] INFO Requests: 49238, requests per second: 992, mean latency: 202.2 ms
+[Tue Jul 17 2018 16:24:39 GMT+0800 (中国标准时间)] INFO Requests: 53942, requests per second: 938, mean latency: 211.6 ms
+[Tue Jul 17 2018 16:24:44 GMT+0800 (中国标准时间)] INFO Requests: 58745, requests per second: 973, mean latency: 209.3 ms
+[Tue Jul 17 2018 16:24:49 GMT+0800 (中国标准时间)] INFO Requests: 63749, requests per second: 1002, mean latency: 199.9 ms
+[Tue Jul 17 2018 16:24:54 GMT+0800 (中国标准时间)] INFO Requests: 68477, requests per second: 946, mean latency: 210.7 ms
+[Tue Jul 17 2018 16:24:59 GMT+0800 (中国标准时间)] INFO Requests: 73423, requests per second: 989, mean latency: 203.1 ms
+[Tue Jul 17 2018 16:25:04 GMT+0800 (中国标准时间)] INFO Requests: 78507, requests per second: 1017, mean latency: 195.6 ms
+[Tue Jul 17 2018 16:25:09 GMT+0800 (中国标准时间)] INFO Requests: 83676, requests per second: 1034, mean latency: 194.8 ms
+[Tue Jul 17 2018 16:25:14 GMT+0800 (中国标准时间)] INFO Requests: 88785, requests per second: 1022, mean latency: 195.2 ms
+[Tue Jul 17 2018 16:25:19 GMT+0800 (中国标准时间)] INFO Requests: 93830, requests per second: 1009, mean latency: 197.1 ms
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Target URL:          http://127.0.0.1:3000
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Max time (s):        100
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Concurrency level:   200
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Agent:               none
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Completed requests:  98914
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Total errors:        0
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Total time:          100.000624897 s
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Requests per second: 989
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO Mean latency:        201.9 ms
+[Tue Jul 17 2018 16:25:24 GMT+0800 (中国标准时间)] INFO
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO Percentage of the requests served within a certain time
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO   50%      199 ms
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO   90%      215 ms
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO   95%      221 ms
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO   99%      248 ms
+[Tue Jul 17 2018 16:25:25 GMT+0800 (中国标准时间)] INFO  100%      374 ms (longest request)
 
 
 两次结果对比如下：
@@ -854,17 +882,22 @@ LS10
 |输出|字符串|BR对象|
 |-|-|-|
 | Completed requests| 98416| 89464|
-|Total time |100.001323043 s | 100.001980034 s|
-|Requests per second |984 |895 |
-|Mean latency |203 ms |223.2 ms |
-|50% |201 ms |214 ms |
-|90% |211 ms |262 ms |
-|95% |216 ms |291 ms |
-|99% |228 ms |342 ms |
-|100% |343 ms |419 ms |
-可以看到
+|Total time |100.000453852 s | 100.000624897 s|
+|Requests per second |1034 |989 |
+|Mean latency |193.1 ms |201.9 ms |
+|50% |192 ms |199 ms |
+|90% |192 ms |215 ms |
+|95% |201 ms |221 ms |
+|99% |209 ms |248 ms |
+|100% |313 ms |374 ms |
+可以看到性能相差无几字符串还略胜一筹。
 
-将页面的动态内容和静态内容分离，通过预先转换静态内容为BR对象可以有效减少CPU的重复使用，节省服务器资源。由于文件本身是二进制数据，在不需要改变情况下尽量读取BR直接传输，不做额外转换。
+这就尴尬了，根据《Nodejs深入浅出》的内容应该分别是：
+测试的QPS（每秒查询次数）是2527.64，传输率为每秒25370.16 KB。
+测试的QPS（每秒查询次数）是4843.28，传输率为每秒48 612.56 KB。
+暂时也不知道怎么找出原因，然后下面的说法现在也不能尽信了。
+
+~~将页面的动态内容和静态内容分离，通过预先转换静态内容为BR对象可以有效减少CPU的重复使用，节省服务器资源。由于文件本身是二进制数据，在不需要改变情况下尽量读取BR直接传输，不做额外转换。~~
 
 
 ### 文件读取
@@ -872,12 +905,10 @@ LS10
 
 在理想状况下每次读取的长度就是用户指定的 highWaterMark设置 长度。但是可能读到文件结尾或者文件本身没有设置长度这么大，这个预先指定的BR对象将有部分剩余可以分配给下次使用。 pool 是常驻内存，只有当pool单元剩余数量小于128（kMinPoolSpace）字节时才会重新分配一个新的BR对象。NS源码如下：
 ```
-if (!pool || pool.length - pool.used < kMinPoolSpace) {
-    // discard the old pool
-    pool = null;
-    allocNewPool(this._readableState.highWaterMark);
-}
+  if (length >= (Buffer.poolSize >>> 1)) return createFromString(string, encoding);
+  if (length > (poolSize - poolOffset)) createPool();
 ```
+（没错的话应该就是这段源码判断了）
 
 这里与BR的内存分配比较类似，highWaterMark的大小影响如下：
 * 对BR内存的分配和使用有一定影响

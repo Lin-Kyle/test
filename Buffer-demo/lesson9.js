@@ -6,4 +6,4 @@ http.createServer(function(req, res) {
     res.writeHead(200);
     res.end(str);
 }).listen(3000);
-console.log('已建立连接，效果请看http://127.0.0.1:3000/');
+console.log('已建立连接，现在可以新开一个终端运行loadtest命令测试效果。');
