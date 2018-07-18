@@ -1,4 +1,4 @@
-## BR介绍
+## Buffer介绍
 > 在 [ECMAScript 2015] (ES6) 引入 TypedArray 之前，JavaScript 语言没有读取或操作二进制数据流的机制。 Buffer 类被引入作为 Node.js API 的一部分，使其可以在 TCP 流或文件系统操作等场景中处理二进制数据流。
 
 > TypedArray 现已被添加进 ES6 中，Buffer 类以一种更优化、更适合 Node.js 用例的方式实现了 Uint8Array API。
@@ -15,9 +15,7 @@
 ## ~~new Buffer()~~
 在 Node.js v6 之前的版本中，Buffer 实例是通过 Buffer 构造函数创建的，它根据提供的参数返回不同的 Buffer。
 
-如果是指定数值则分配一个指定大小的新建的 Buffer 对象，在 Node.js 8.0.0 之前，分配给这种 Buffer 实例的内存是没有初始化的，且可能包含敏感数据。 这种 Buffer 实例随后必须被初始化，可以使用 buf.fill(0) 或写满这个 Buffer。 虽然这种行为是为了提高性能而有意为之的，但开发经验表明，创建一个快速但未初始化的 Buffer 与创建一个慢点但更安全的 Buffer 之间需要有更明确的区分。从 Node.js 8.0.0 开始， Buffer(num) 和 new Buffer(num) 将返回一个初始化内存之后的 Buffer。
-
-因为 new Buffer() 的行为会根据所传入的第一个参数的值的数据类型而明显地改变，所以如果应用程序没有正确地校验传给 new Buffer() 的参数、或未能正确地初始化新分配的 Buffer 的内容，就有可能在无意中为他们的代码引入安全性与可靠性问题。
+在 Node.js 8.0.0 之前，分配给这种 Buffer 实例的内存是没有初始化的，且可能包含敏感数据。 这种 Buffer 实例随后必须被初始化，可以使用 buf.fill(0) 或写满这个 Buffer。 虽然这种行为是为了提高性能而有意为之的，但开发经验表明，创建一个快速但未初始化的 Buffer 与创建一个慢点但更安全的 Buffer 之间需要有更明确的区分。从 Node.js 8.0.0 开始， Buffer(num) 和 new Buffer(num) 将返回一个初始化内存之后的 Buffer。因为 new Buffer() 的行为会根据所传入的第一个参数的值的数据类型而明显地改变，所以如果应用程序没有正确地校验传给 new Buffer() 的参数、或未能正确地初始化新分配的 Buffer 的内容，就有可能在无意中为他们的代码引入安全性与可靠性问题。
 
 为了使 Buffer 实例的创建更可靠、更不容易出错，各种 new Buffer() 构造函数已被 废弃，并由 Buffer.from()、Buffer.alloc()、和 Buffer.allocUnsafe() 方法替代。
 
@@ -69,9 +67,6 @@ arr[1] = 6000;
 
 // 输出: <Buffer 88 13 70 17>
 console.log('修改arr后：', buf);
-
-//buf： <Buffer 88 13 a0 0f>
-//修改arr后： <Buffer 88 13 70 17>
 ```
 
 ---
@@ -128,7 +123,7 @@ console.log(buf2.toString());
 |fill [string，Buffer，integer] | 预填充值，默认：0 |
 |encoding [string]|如果 fill 是字符串，则该值是它的字符编码。 默认：'utf8' |
 
-分配一个大小为 size 字节的新建的 Buffer，后期也可以通过BR对象的toString()转换编码。
+分配一个大小为 size 字节的新建的 Buffer，后期也可以通过Buffer对象的toString()转换编码。
 
 注意：
 1，8.2.0新增buffer.constants模块属性，里面有个buffer.constants.MAX_LENGTH属性，意思是单个Buffer实例允许的最大量度，在32位体系结构上，这个值是(2^30)-1 (~1GB)。 在64位体系结构上，这个值是(2^31)-1 (~2GB)，也可在buffer.kMaxLength查看该值。
@@ -151,7 +146,7 @@ const buf = Buffer.alloc(-1);
 //     at Function.Module._load (internal/modules/cjs/loader.js:543:3)
 //     at Function.Module.runMain (internal/modules/cjs/loader.js:744:10)
 //     at startup (internal/bootstrap/node.js:238:19)
-//     at bootstrapNodeJSCore (internal/bootstrap/node.js:572:3)
+//     at bootstrapNodeJavascriptCore (internal/bootstrap/node.js:572:3)
 ```
 
 
@@ -165,8 +160,8 @@ Buffer 模块会预分配一个大小为 Buffer.poolSize（默认：8192，用�
 对这个预分配的内部内存池的使用，是调用 Buffer.alloc(size, fill) 和 Buffer.allocUnsafe(size).fill(fill) 的关键区别。 具体地说，Buffer.alloc(size, fill) 永远不会使用这个内部的 Buffer 池，但如果 size 小于或等于 Buffer.poolSize 的一半， Buffer.allocUnsafe(size).fill(fill) 会使用这个内部的 Buffer 池。 当应用程序需要 Buffer.allocUnsafe() 提供额外的性能时，这个细微的区别是非常重要的。
 
 
-### >> 计算符
-除以2的幂函数后的最大整数值
+### >>  和 >>> 计算符
+\>>：数值除以2的幂函数后的最大整数值
 ```
 console.log(10000 >> 1);
 console.log(10000 >> 2);
@@ -178,11 +173,21 @@ console.log(10000 >> 4);
 // 625
 ```
 
+\>>>：数值减半向下整取
+```
+console.log(100 >>> 1);
+console.log(99.9 >>> 1);
+console.log(99 >>> 1);
+// 50
+// 49
+// 49
+```
+
 
 ## Buffer.allocUnsafeSlow(size) 替代  ~~SlowBuffer 类~~   
 （目测用法事项都一个样，可能只是觉得没必要单独弄个类所以把方法并入Buffer类里吧，底层实现有没变就不清楚了）
 
-分配一个大小为 size 字节的新建的 Buffer 。 如果 size 大于 buffer.constants.MAX_LENGTH（上面说过，不记得回顾一下） 或小于 0，则抛出 [RangeError] 错误。。
+分配一个大小为 size 字节的新建的 Buffer 。 如果 size 大于 buffer.constants.MAX_LENGTH（上面说过，不记得回顾一下） 或小于 0，则抛出 [RangeError] 错误。
 
 以这种方式创建的 Buffer 实例的底层内存是未初始化的。 新创建的 Buffer 的内容是未知的，且可能包含敏感数据。 可以使用 buf.fill(0) 初始化 Buffer 实例为0。
 
@@ -217,7 +222,6 @@ Buffer.allocUnsafeSlow() 应当仅仅作为开发者已经在他们的应用程�
 | -------- | ---------------------------------- | ----- | ----------- |--|
 | 入参类型 | array，arrayBuffer，Buffer，string | size  | size | size|
 | 返回  | 返回新建包含所提供入参副本的 Buffer  | 返回指定大小被填满的 Buffer 。 速度较慢但可确保不包含敏感数据。  | 返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据 |返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据|
-| 内存分配     | C++内存分配  | alloc | 分配内存小于或等于 Buffer.poolSize >> 1，从Buffer 模块预分配大小为 Buffer.poolSize 的快速分配池分配 | C++内存分配|
 
 
 
@@ -249,17 +253,19 @@ const bufA = Buffer.concat([buf1, buf2, buf3], totalLength);
 console.log(bufA);
 ```
 
- Buffer.concat()封装了小BR对象向大BR对象的复制过程，源码如下：
+ Buffer.concat()封装了小Buffer对象向大Buffer对象的复制过程，源码如下：
  ```
 Buffer.concat = function(list, length) {
     if (!Array.isArray(list)) {
         throw new Error('Usage: Buffer.concat(list, [length])');
     }
+
     if (list.length === 0) {
         return new Buffer(0);
     } else if (list.length === 1) {
         return list[0];
     }
+
     if (typeof length !== 'number') {
         length = 0;
         for (var i = 0; i < list.length; i++) {
@@ -267,39 +273,46 @@ Buffer.concat = function(list, length) {
             length += buf.length;
         }
     }
+
     var buffer = new Buffer(length);
     var pos = 0;
+
     for (var i = 0; i < list.length; i++) {
         var buf = list[i];
         buf.copy(buffer, pos);
         pos += buf.length;
     }
+
     return buffer;
 };
  ```
 
-# BR 結構
+# Buffer 結構
 
 ## 模塊結構
-BR是一個典型的JS與C++結合的模塊，性能部分用C++實現，非性能部分用JS實現。因爲屬於核心模塊，所以NS在進程啓動的時候就已經加載好了，所以無需引入直接使用。
-上次說過因爲BR屬於非V8分配的堆外内存，所以非常適用於大多數場景下的大内存操作。
+Buffer是一個典型的Javascript與C++結合的模塊，性能部分用C++實現，非性能部分用Javascript實現。因爲屬於核心模塊，所以Nodejs在進程啓動的時候就已經加載好了，所以無需引入直接使用。
+上次說過因爲Buffer屬於非V8分配的堆外内存，所以非常適用於大多數場景下的大内存操作。
 
-NS内存有关文章请看[Nodejs内存控制](https://www.qdfuns.com/article/40831/8004b9968520abc963e2f954fffd5d7f.html)
+![模塊結構](1.png)
 
-## BR對象
-BR對象類似數組，它的元素為16進制的兩位數，即0~255的數值。
+Nodejs内存有关文章请看[Nodejs内存控制](https://www.qdfuns.com/article/40831/8004b9968520abc963e2f954fffd5d7f.html)
+
+## Buffer對象
+Buffer對象類似數組，它的元素為16進制的兩位數，即0~255的數值。
 ```
 console.log(Buffer.from('Buffer對象。'));
 // <Buffer 42 75 66 66 65 72 e5 b0 8d e8 b1 a1 e3 80 82>
 ```
+> 十六进制（英文名称：Hexadecimal），是计算机中数据的一种表示方法。同我们日常生活中的表示法不一样。它由0-9，A-F组成，字母不区分大小写。与10进制的对应关系是：0-9对应0-9；A-F对应10-15；N进制的数可以用0~(N-1)的数表示，超过9的用字母A-F。
 
-之所以說BR對象和數組很像是因爲它們實例化方式，訪問length長度和下標訪問賦值元素都一樣。
+之所以說Buffer對象和數組很像是因爲它們實例化方式，訪問length長度和下標訪問賦值元素都一樣。
 ```
 const buf = Buffer.alloc(100);
 console.log(buf.length);
 console.log(buf[0]);
 buf[0] = 100;
 console.log(buf[0]);
+
 // 100
 // 0
 // 100
@@ -316,62 +329,55 @@ console.log(buf[0], buf[1], buf[2]);
 ```
 
 
-## BR内存分配
-BR對象的内存分配是在NS的C++層面實現内存申請的，因爲處理大量的字節數據不能采用需要多少就向操作系統申請多少的方式，這可能造成大量的内存申請的系統調用，對操作系統有一定壓力。因此NS采用C++層面申請内存，JS中分配内存的策略。
+## Buffer内存分配
+Buffer對象的内存分配是在Nodejs的C++層面實現内存申請的，因爲處理大量的字節數據不能采用需要多少就向操作系統申請多少的方式，這可能造成大量的内存申請的系統調用，對操作系統有一定壓力。因此Nodejs采用C++層面申請内存，Javascript中分配内存的策略。
 
-为了高效使用申请的内存，NS采用了 slab 动态内存管理机制，简单来说就是一块申请好的固定大小的内存区域，有三种状态：
+为了高效使用申请的内存，Nodejs采用了 slab 动态内存管理机制，简单来说就是一块申请好的固定大小的内存区域，有三种状态：
 * full：完全分配
 * parital：部分分配
 * empty：没有被分配
 
-NS以 8KB 作为界限区分大小对象，也是每个slab的大小值，在JS层面作为单位单元进行内存分配。
+Nodejs以 8KB 作为界限区分大小对象，也是每个slab的大小值，在Javascript层面作为单位单元进行内存分配。
 
 
 ### 分配小对象
-如果指定大小小于8KBNS会按照小对象的方式进行分配，主要使用一个局部变量 pool 作为中间处理对象，处于分配状态的slab单元都指向它。
+如果指定大小小于8KBNodejs会按照小对象的方式进行分配，主要使用一个局部变量 allocPool 作为中间处理对象，处于分配状态的slab单元都指向它。
 ```
-var pool;
-function allocPool(){
-    pool = Buffer.allocUnsafeSlow(Buffer.poolSize);//8192
-    pool.used = 0;
+/*设置阈值，初始化变量*/
+Buffer.poolSize = 8 * 1024;
+var poolSize, poolOffset, allocPool;
+
+------------省略其他代码------------
+
+/* 创建池 */
+function createPool() {
+    poolSize = Buffer.poolSize;
+    allocPool = createUnsafeArrayBuffer(poolSize);
+    poolOffset = 0;
 }
 ```
 
 > |--------------------------------------------| 8KB的pool
 |
-used：0
-
-当前slab处于empty状态，构造小BR对象的时候会去检查pool对象，如果pool没有被创建将会创建新的slab单元指向它。
-同时当前BR对象的parent属性指向该slab，并记录下是从这个slab的哪个位置（offset）开始使用，slab对象也会记录自身使用了多少字节。源码如下。
-```
-function allocate(size) {
-    //检查入参
-    if (size <= 0) {
-        return new FastBuffer();
-    }
-    //检查阈值
-    if (size < (Buffer.poolSize >>> 1)) {
-        //检查pool对象
-        if (size > (poolSize - poolOffset))
-            createPool();
-        var b = new FastBuffer(allocPool, poolOffset, size);
-        //记录位置
-        poolOffset += size;
-        alignPool();
-        return b;
-    } else {
-        return createUnsafeBuffer(size);
-    }
-}
-```
-
 offset：0
-|
-|||||||||||||||---------------------------------------| 8KB的pool
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
-user：1024B
 
-这时候的slab状态为partial，当再次创建一个BR对象时，构造过程会判断这个slab剩余空间是否足够使用并更新分配状态，如果不够会构建新的slab，原有slab的剩余空间就被浪费了。
+当前slab处于empty状态，构造小Buffer对象的时候会去检查allocPool对象，如果allocPool没有被创建将会创建新的slab单元指向它。
+同时当前Buffer对象的parent属性指向该slab，并记录下是从这个slab的哪个位置（offset）开始使用，slab对象也会记录自身使用了多少字节。源码如下。
+```
+const buf = Buffer.from('Buffer');
+console.log(buf.parent);
+console.log(buf.offset);
+
+// ArrayBuffer { byteLength: 8192 }
+// 136
+
+```
+
+|||||-------------------------------------------------| 8KB的pool
+&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;offset：128
+
+这时候的slab状态为partial，当再次创建一个Buffer对象时，构造过程会判断这个slab剩余空间是否足够使用并更新分配状态，如果不够会构建新的slab，原有slab的剩余空间就被浪费了。
 
 例如分别构建1个字节和8192字节
 ```
@@ -380,24 +386,24 @@ Buffer.alloc(1);
 Buffer.alloc(8192);
 //<Buffer 00 ... 00>
 ```
-除非slab上的BR对象都被释放且可回收，否则即使只有一个字节实际上也可能会占据8KB内存。
+除非slab上的Buffer对象都被释放且可回收，否则即使只有一个字节实际上也可能会占据8KB内存。
 
 
 ### 分配大对象
-创建超过8KB的BR对象将会直接分配一个 SR对象 作为slab单元而且是被独占。
+~~~ 创建超过8KB的Buffer对象将会直接分配一个 SlowBuffer 类对象 作为slab单元而且是被独占。 ~~~
+已被废弃的: 使用 Buffer.allocUnsafeSlow() 代替。
 ```
 // Big buffer, just alloc one
 this.parent = Buffer.allocUnsafeSlow(this.length);
 this.offset = 0;
 ```
- SR类是C++定义的，虽然buffer模块可以访问，但是不建议直接操作，而是使用BR替代。
 
- BR对象是JS层面的，能够被V8垃圾回收标记，但是内部的parent属性指向的SR对象却来自NS自身C++中的定义，是C++层面的BR对象，所用内存不在V8堆中。
+ ~~~ Buffer对象是Javascript层面的，能够被V8垃圾回收标记，但是内部的parent属性指向的SlowBuffer 类对象却来自Nodejs自身C++中的定义，是C++层面的Buffer对象，所用内存不在V8堆中。 ~~~
 
 ###小结
-JS层面只是提供给使用BR对象，真正的内存还是NS的C++层面提供。
-分配小BR对象是采用slab的机制进行预先申请和事后分配。
-分配大BR对象是直接由C++层面提供的独享内存。
+Javascript层面只是提供给使用Buffer对象，真正的内存还是Nodejs的C++层面提供。
+分配小Buffer对象是采用slab的机制进行预先申请和事后分配。
+分配大Buffer对象是直接由C++层面提供的独享内存。
 
 
 
@@ -419,7 +425,7 @@ JS层面只是提供给使用BR对象，真正的内存还是NS的C++层面提�
 字符串转Buffer主要通过构造函数完成,这种方式只能存储一种编码类型。
 > Buffer.from(string[, encoding])
 
-一个BR对象可以存储不同编码类型的字符串转码值，需要调用到 write() 方法。
+一个Buffer对象可以存储不同编码类型的字符串转码值，需要调用到 write() 方法。
 > buf.write(string[, offset[, length]][, encoding])
 
 |参数|描述|
@@ -440,7 +446,7 @@ console.log(`${len} 个字节: ${buf.toString('utf8', 0, len)}`);
 注意：每种编码所用字节长度可能不同，处理需谨慎。
 
 
-### BR转字符串
+### Buffer转字符串
 > buf.toString([encoding], [start], [end])
 
 ```
@@ -451,8 +457,8 @@ console.log(buf.toString('base64'));
 //QnVmZmVy5bCN6LGh44CC
 ```
 
-### BR编码兼容
-NS的BR对象支持的编码类型有限，只有少数几种支持在字符串和BR之间转换，BR提供了  isEncoding() 判断编码是否支持转换。
+### Buffer编码兼容
+Nodejs的Buffer对象支持的编码类型有限，只有少数几种支持在字符串和Buffer之间转换，Buffer提供了  isEncoding() 判断编码是否支持转换。
 
 ```
 console.log(Buffer.isEncoding('utf8'));
@@ -463,7 +469,7 @@ console.log(Buffer.isEncoding('abc'));
 
 对于不支持的编码类型也有很多模块库可以实现，例如
 [iconv-js](https://github.com/Hikaru02/iconv-js)：通过C++调用libiconv库完成
-[iconv-lite](https://github.com/ashtuchkin/iconv-lite)：通过纯JS实现，更加轻量，无需转换性能更好
+[iconv-lite](https://github.com/ashtuchkin/iconv-lite)：通过纯Javascript实现，更加轻量，无需转换性能更好
 
 我们用iconv-lite为例，先安装依赖
 > yarn add iconv-lite
@@ -507,7 +513,7 @@ iconv.encodingExists("us-ascii")
     - Taiwan/Hong Kong: Big5, Big5-HKSCS, Windows950
 
 
-### BR拼接
+### Buffer拼接
 实际开发的常用场景是需要使用流方式逐步读写文件，我们现在目录下弄个 test.txt 文本作为测试，随便输首中英文歌词做比较。
 ```
 Someone like you 另寻沧海
@@ -626,7 +632,7 @@ LS2
 > data += chunk;
 
 这行代码会隐性执行toString()操作，正常的英文内容自然没问题，但是对于宽字节的中文来说就是定时炸弹了。
-我们稍微修改一下配置让文件流每次只读取BR长度11个字节，当前目录新建脚本 lesson3.js执行。
+我们稍微修改一下配置让文件流每次只读取Buffer长度11个字节，当前目录新建脚本 lesson3.js执行。
 ```
 const fs = require('fs');
 
@@ -644,10 +650,10 @@ LS3
 现在我们能看到数不清的�乱码出现了。
 
 ### 乱码如何产生
-我们都知道从 fs.createReadStream() 读取出来的是BR对象，由于我们限定了读取字节数因此会发生截断BR的情况，所以当每段截取BR在输出的时候那些无法形成文字的只能显示乱码，这就是为什么乱码的位置零零散散遍布全文。
+我们都知道从 fs.createReadStream() 读取出来的是Buffer对象，由于我们限定了读取字节数因此会发生截断Buffer的情况，所以当每段截取Buffer在输出的时候那些无法形成文字的只能显示乱码，这就是为什么乱码的位置零零散散遍布全文。
 
 ### readable.setEncoding(encoding)
-既然知道乱码原因是源自BR对象的不完整解析，如果我们改变读取文件的格式会怎样呢？
+既然知道乱码原因是源自Buffer对象的不完整解析，如果我们改变读取文件的格式会怎样呢？
 
 我们稍微修改一下配置让文件流以utf8格式编译，当前目录新建脚本 lesson4.js执行。
 ```
@@ -671,7 +677,7 @@ LS4
 ### setEncoding原理
 即使设置编码类型之后也无法解释为什么可以正常输出问题，因为脚本还是以截断字节的方式读取拼接，因此最可能是每次读取流之后不再隐性执行toString()方法而是在读取完毕之后再一起执行。
 
-带着合理猜想，我们稍微在读取阶段看看chunk是不是BR格式，当前目录新建脚本 lesson5.js执行。
+带着合理猜想，我们稍微在读取阶段看看chunk是不是Buffer格式，当前目录新建脚本 lesson5.js执行。
 ```
 const fs = require('fs');
 
@@ -690,7 +696,7 @@ rs.on("end", function() {
 LS5
 执行脚本之后很诧异结果和我想的并不一样，尽管不是完整顺序文本，但是的的确确能够正常输出中文。
 
-事实上在调用setEncoding()的时候可读流对象在内部设置了一个  decoder 对象，每次读取data事件都通过该对象进行BR到字符串的解码才传递给调用者，至于怎么解决字节被截断的问题，这就需要接着往下看了。
+事实上在调用setEncoding()的时候可读流对象在内部设置了一个  decoder 对象，每次读取data事件都通过该对象进行Buffer到字符串的解码才传递给调用者，至于怎么解决字节被截断的问题，这就需要接着往下看了。
 
 
 ### StringDecoder 类
@@ -733,10 +739,10 @@ console.log(decoder.end(Buffer.from([0xAC])));
 LS7
 
 
-### 正确拼装BR
+### 正确拼装Buffer
 因为StringDecoder 类只支持UTF-8、Base64和
 UCS-2/UTF-16LE，所以setEncoding()只能解决大部分问题，所以还是得上到之前说的转码库解决。
-接着上面代码修改，先去掉setEncoding方法，用一个数组存储所有BR片段并记录总长度，接受完所有数据之后合并成一个BR对象再转码。
+接着上面代码修改，先去掉setEncoding方法，用一个数组存储所有Buffer片段并记录总长度，接受完所有数据之后合并成一个Buffer对象再转码。
 ```
 const fs = require('fs'),
     iconv = require('iconv-lite');
@@ -760,7 +766,7 @@ LS8
 
 
 ## 性能
-BR在文件I/O和网络I/O运用广泛，特别在网络传输中会转换成BR进行二进制数据传输。
+Buffer在文件I/O和网络I/O运用广泛，特别在网络传输中会转换成Buffer进行二进制数据传输。
 
 ### 网络请求
 我们做一些性能测试看看效果，构造一个简单的字符串返回给客户端。新建脚本 lesson9.js 复制下面代码并启动。
@@ -822,7 +828,7 @@ LS9
 [Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO   99%      209 ms
 [Tue Jul 17 2018 16:30:22 GMT+0800 (中国标准时间)] INFO  100%      313 ms (longest request)
 
-然后我们新建 lesson10 脚本在返回之前先把字符串转成BR对象，重复上面操作。
+然后我们新建 lesson10 脚本在返回之前先把字符串转成Buffer对象，重复上面操作。
 ```
 var http = require('http');
 
@@ -879,7 +885,7 @@ LS10
 
 两次结果对比如下：
 
-|输出|字符串|BR对象|
+|输出|字符串|Buffer对象|
 |-|-|-|
 | Completed requests| 98416| 89464|
 |Total time |100.000453852 s | 100.000624897 s|
@@ -897,21 +903,24 @@ LS10
 测试的QPS（每秒查询次数）是4843.28，传输率为每秒48 612.56 KB。
 暂时也不知道怎么找出原因，然后下面的说法现在也不能尽信了。
 
-~~将页面的动态内容和静态内容分离，通过预先转换静态内容为BR对象可以有效减少CPU的重复使用，节省服务器资源。由于文件本身是二进制数据，在不需要改变情况下尽量读取BR直接传输，不做额外转换。~~
+~~将页面的动态内容和静态内容分离，通过预先转换静态内容为Buffer对象可以有效减少CPU的重复使用，节省服务器资源。由于文件本身是二进制数据，在不需要改变情况下尽量读取Buffer直接传输，不做额外转换。~~
 
 
 ### 文件读取
-上面提到过的文件读取中有个 highWaterMark设置 对性能也至关重要，例如 fs.createReadStream() 的工作方式是在内存中准备一段BR，然后在 fs.read() 读取时逐步从磁盘中将字节复制到BR中。完成一次读取时则从这个BR中通过 slice() 方法取出部分数据作为一个小BR对象，再通过data事件传递给调用方。如果BR用完则重新分配一个，否则继续使用。
+上面提到过的文件读取中有个 highWaterMark设置 对性能也至关重要，例如 fs.createReadStream() 的工作方式是在内存中准备一段Buffer，然后在 fs.read() 读取时逐步从磁盘中将字节复制到Buffer中。完成一次读取时则从这个Buffer中通过 slice() 方法取出部分数据作为一个小Buffer对象，再通过data事件传递给调用方。如果Buffer用完则重新分配一个，否则继续使用。
 
-在理想状况下每次读取的长度就是用户指定的 highWaterMark设置 长度。但是可能读到文件结尾或者文件本身没有设置长度这么大，这个预先指定的BR对象将有部分剩余可以分配给下次使用。 pool 是常驻内存，只有当pool单元剩余数量小于128（kMinPoolSpace）字节时才会重新分配一个新的BR对象。NS源码如下：
+在理想状况下每次读取的长度就是用户指定的 highWaterMark设置 长度。但是可能读到文件结尾或者文件本身没有设置长度这么大，这个预先指定的Buffer对象将有部分剩余可以分配给下次使用。 pool 是常驻内存，只有当pool单元剩余数量小于128（kMinPoolSpace）字节时才会重新分配一个新的Buffer对象。Nodejs源码如下：
 ```
-  if (length >= (Buffer.poolSize >>> 1)) return createFromString(string, encoding);
-  if (length > (poolSize - poolOffset)) createPool();
-```
-（没错的话应该就是这段源码判断了）
+if (size > (poolSize - poolOffset)) createPool();
 
-这里与BR的内存分配比较类似，highWaterMark的大小影响如下：
-* 对BR内存的分配和使用有一定影响
+------------省略其他代码------------
+
+if (length > (poolSize - poolOffset)) createPool();
+```
+（分别两个函数的源码，表达意思其实一致）
+
+这里与Buffer的内存分配比较类似，highWaterMark的大小影响如下：
+* 对Buffer内存的分配和使用有一定影响
 * 设置过小可能导致系统调用次数过多
 
 读取一个相同的大文件时候，highWaterMark的大小与读取速度成正比。
