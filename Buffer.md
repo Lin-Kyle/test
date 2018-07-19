@@ -1,5 +1,15 @@
+##前言
+一开始全文是基于[color=#ec7379]《Nodejs深入浅出》[/color]，但是因为有段年头有些API已经是被废弃的，而且越往下走问题越多，最后只好自从查阅资料从头开始研究，所以这里的demo都是以[color=#ec7379]Nodejs10.0[/color]为准。
+因为内容实在太多，已经超过20000字限制，而且太长看着太烦了，所以我会分成三篇博文发布，后面发布了会补上跳转地址，分别是：
+Nodejs的Buffer对象（上）—— API废弃与更新 （基于官网文档）
+Nodejs的Buffer对象（中）—— 基本原理与使用要点（基于nodejs 深入浅出）
+Nodejs的Buffer对象（下）—— 源代码实现浅析（基于nodejs源码）
+
+因为靠自己整理输出，如果有哪些遗漏错误希望可以指教一下。
+
+
 ## Buffer介绍
-> 在 [ECMAScript 2015] (ES6) 引入 TypedArray 之前，JavaScript 语言没有读取或操作二进制数据流的机制。 Buffer 类被引入作为 Node.js API 的一部分，使其可以在 TCP 流或文件系统操作等场景中处理二进制数据流。
+> 在 [color=#ec7379][ECMAScript 2015]\(ES6)[/color] 引入 [color=#ec7379]TypedArray[/color] 之前，JavaScript 语言没有读取或操作二进制数据流的机制。 Buffer 类被引入作为 Node.js API 的一部分，使其可以在 TCP 流或文件系统操作等场景中处理二进制数据流。
 
 > TypedArray 现已被添加进 ES6 中，Buffer 类以一种更优化、更适合 Node.js 用例的方式实现了 Uint8Array API。
 
@@ -9,11 +19,10 @@
 
 (摘自[Nodejs中文API](http://nodejs.cn/api/buffer.html))
 
-虽然全文基于[color=#ec7379]《Nodejs深入浅出》[/color]，但是因为有段年头有些API已经是被废弃的，所以这里的demo都是以Nodejs10为准。
 
 
 ## ~~new Buffer()~~
-在 Node.js v6 之前的版本中，Buffer 实例是通过 Buffer 构造函数创建的，它根据提供的参数返回不同的 Buffer。
+在 [color=#ec7379]Node.js v6[/color] 之前的版本中，Buffer 实例是通过 Buffer 构造函数创建的，它根据提供的参数返回不同的 Buffer。
 
 在 [color=#ec7379]Node.js 8.0.0[/color] 之前，分配给这种 Buffer 实例的内存是没有初始化的，且可能包含敏感数据。 这种 Buffer 实例随后必须被初始化，可以使用 buf.fill(0) 或写满这个 Buffer。 虽然这种行为是为了提高性能而有意为之的，但开发经验表明，创建一个快速但未初始化的 Buffer 与创建一个慢点但更安全的 Buffer 之间需要有更明确的区分。从 [color=#ec7379]Node.js 8.0.0[/color] 开始， Buffer(num) 和 new Buffer(num) 将返回一个初始化内存之后的 Buffer。因为 new Buffer() 的行为会根据所传入的第一个参数的值的数据类型而明显地改变，所以如果应用程序没有正确地校验传给 new Buffer() 的参数、或未能正确地初始化新分配的 Buffer 的内容，就有可能在无意中为他们的代码引入安全性与可靠性问题。
 
@@ -177,7 +186,7 @@ console.log(99 >>> 1);
 ## Buffer.allocUnsafeSlow(size) 替代  ~~SlowBuffer 类~~   
 [color=#b1b1b1]（目测用法事项都一个样，可能只是觉得没必要单独弄个类所以把方法并入Buffer类里吧，底层实现有没变就不清楚了）[/color]
 
-分配一个大小为 size 字节的新建的 Buffer 。 如果 size 大于 buffer.constants.MAX_LENGTH（上面说过，不记得回顾一下） 或小于 0，则抛出 [RangeError] 错误。
+分配一个大小为 size 字节的新建的 Buffer 。 如果 size 大于 buffer.constants.MAX_LENGTH[color=#b1b1b1]（上面Buffer.alloc(size[, fill[, encoding]])说过，不记得回顾一下）[/color] 或小于 0，则抛出 [RangeError] 错误。
 
 以这种方式创建的 Buffer 实例的底层内存是未初始化的。 新创建的 Buffer 的内容是未知的，且可能包含敏感数据。 可以使用 buf.fill(0) 初始化 Buffer 实例为0。
 
@@ -212,6 +221,13 @@ Buffer.allocUnsafeSlow() 应当仅仅作为开发者已经在他们的应用程�
 | -------- | ---------------------------------- | ----- | ----------- |--|
 | 入参类型 | array，arrayBuffer，Buffer，string | size  | size | size|
 | 返回  | 返回新建包含所提供入参副本的 Buffer  | 返回指定大小被填满的 Buffer 。 速度较慢但可确保不包含敏感数据。  | 返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据 |返回指定大小被填满的 Buffer，内存未初始化且可能包含敏感数据|
+
+
+### 区别
+Buffer 模块会预分配一个大小为 Buffer.poolSize 的内部 Buffer 实例作为快速分配池
+* Buffer.alloc() 永远不会使用这个内部的 Buffer 池；
+* Buffer.allocUnsafe() 在size小于或等于 Buffer.poolSize 的一半时会使用Buffer 池；
+* Buffer.allocUnsafeSlow() 创建一个非池的 Buffer 实例；
 
 
 
@@ -279,25 +295,27 @@ Buffer.concat = function(list, length) {
 
 ```
 
-# Buffer 結構
 
-## 模塊結構
-Buffer是一個典型的Javascript與C++結合的模塊，[bgcolor=#ffe9ec]性能部分用C++實現，非性能部分用Javascript實現[/bgcolor]。因爲屬於核心模塊，所以Nodejs在進程啓動的時候就已經加載好了，所以無需引入直接使用。
-上次說過因爲Buffer屬於非V8分配的堆外内存，所以非常適用於大多數場景下的大内存操作。
 
-![模塊結構](1.png)
+# Buffer 结构
+
+## 模块结构
+Buffer是一个典型的Javascript与C++结合的模块，[bgcolor=#ffe9ec]性能部分用C++实现，非性能部分用Javascript实现[/bgcolor]。因为属於核心模块，所以Nodejs在进程启动的时候就已经加载好了，所以无需引入直接使用。
+上次说过因为Buffer属於非V8分配的堆外内存，所以非常适用於大多数场景下的大内存操作。
+
+![图片描述](attimg://article/content/picture/201807/19/113304ly92lbbo9b8iknql.png)
 
 Nodejs内存有关文章请看[Nodejs内存控制](https://www.qdfuns.com/article/40831/8004b9968520abc963e2f954fffd5d7f.html)
 
-## Buffer對象
-Buffer對象類似數組，它的元素為16進制的兩位數，即0~255的數值。
+## Buffer对象
+Buffer对象类似数组，它的元素為[color=#ec7379]16进制[/color]的两位数，即[color=#ec7379]0~255[/color]的数值。
 ```
-console.log(Buffer.from('Buffer對象。'));
+console.log(Buffer.from('Buffer对象。'));
 // <Buffer 42 75 66 66 65 72 e5 b0 8d e8 b1 a1 e3 80 82>
 ```
 > 十六进制（英文名称：Hexadecimal），是计算机中数据的一种表示方法。同我们日常生活中的表示法不一样。它由0-9，A-F组成，字母不区分大小写。与10进制的对应关系是：0-9对应0-9；A-F对应10-15；N进制的数可以用0~(N-1)的数表示，超过9的用字母A-F。
 
-之所以說Buffer對象和數組很像是因爲它們實例化方式，訪問length長度和下標訪問賦值元素都一樣。
+之所以说Buffer对象和数组很像是因为它们实例化方式，访问length长度和下标访问赋值元素都一样。
 ```
 const buf = Buffer.alloc(100);
 console.log(buf.length);
@@ -310,7 +328,7 @@ console.log(buf[0]);
 // 100
 ```
 
-[bgcolor=#ffe9ec]注意：如果賦值非整數則捨棄小數，小於 0 會逐次加 256 ，大於 255 則逐次減 256。[/bgcolor]
+[bgcolor=#ffe9ec]注意：如果赋值非整数则捨弃小数，小於 0 会逐次加 256 ，大於 255 则逐次减 256。[/bgcolor]
 ```
 const buf = Buffer.alloc(100);
 buf[0] = 100.01;
@@ -322,7 +340,7 @@ console.log(buf[0], buf[1], buf[2]);
 
 
 ## Buffer内存分配
-Buffer對象的内存分配是在Nodejs的C++層面實現内存申請的，因爲處理大量的字節數據不能采用需要多少就向操作系統申請多少的方式，這可能造成大量的内存申請的系統調用，對操作系統有一定壓力。因此[bgcolor=#ffe9ec]Nodejs采用C++層面申請内存，Javascript中分配内存的策略[/bgcolor]。
+Buffer对象的内存分配是在Nodejs的C++层面实现内存申请的，因为处理大量的字节数据不能采用需要多少就向操作系统申请多少的方式，这可能造成大量的内存申请的系统调用，对操作系统有一定压力。因此[bgcolor=#ffe9ec]Nodejs采用C++层面申请内存，Javascript中分配内存的策略[/bgcolor]。
 
 为了高效使用申请的内存，Nodejs采用了 [color=#ec7379]slab 动态内存管理机制[/color]，简单来说就是一块申请好的固定大小的内存区域，有三种状态：
 * full：完全分配
@@ -333,7 +351,7 @@ Nodejs以 [color=#ec7379]8KB[/color] 作为界限区分大小对象，也是每�
 
 
 ### 分配小对象
-如果指定大小小于8KBNodejs会按照小对象的方式进行分配，主要使用一个局部变量 [color=#ec7379]allocPool[/color] 作为中间处理对象，处于分配状态的slab单元都指向它。
+如果指定大小小于8KB，Nodejs会按照小对象的方式进行分配，主要使用一个局部变量 [color=#ec7379]allocPool[/color] 作为中间处理对象，处于分配状态的slab单元都指向它。源码如下：
 ```
 /*设置阈值，初始化变量*/
 Buffer.poolSize = 8 * 1024;
@@ -348,13 +366,14 @@ function createPool() {
     poolOffset = 0;
 }
 ```
+---
 
 > |--------------------------------------------| 8KB的pool
 |
 offset：0
 
-当前slab处于empty状态，构造小Buffer对象的时候会去检查allocPool对象，如果allocPool没有被创建将会创建新的slab单元指向它。
-同时当前Buffer对象的parent属性指向该slab，并记录下是从这个slab的哪个位置（offset）开始使用，slab对象也会记录自身使用了多少字节，如下。
+当前slab处于[color=#ec7379]empty[/color]状态，构造小Buffer对象的时候会去检查allocPool对象，如果allocPool没有被创建将会创建新的slab单元指向它。
+同时当前Buffer对象的[color=#ec7379]parent[/color]属性指向该slab，并记录下是从这个slab的哪个位置（[color=#ec7379]offset[/color]）开始使用，slab对象也会记录自身使用了多少字节，如下。
 ```
 const buf = Buffer.from('Buffer');
 console.log(buf.parent);
@@ -369,7 +388,7 @@ console.log(buf.offset);
 &nbsp;&nbsp;&nbsp;&nbsp;|
 &nbsp;&nbsp;&nbsp;&nbsp;offset：128
 
-这时候的slab状态为partial，当再次创建一个Buffer对象时，构造过程会判断这个slab剩余空间是否足够使用并更新分配状态，如果不够会构建新的slab，原有slab的剩余空间就被浪费了。
+这时候的slab状态为[color=#ec7379]partial[/color]，当再次创建一个Buffer对象时，构造过程会判断这个slab剩余空间是否足够使用并更新分配状态，如果不够会构建新的slab，原有slab的剩余空间就被浪费了。
 
 例如分别构建1个字节和8192字节
 ```
@@ -378,19 +397,22 @@ Buffer.alloc(1);
 Buffer.alloc(8192);
 //<Buffer 00 ... 00>
 ```
+
+源码如下：
+```
+if (length > (poolSize - poolOffset)) createPool();
+```
 除非slab上的Buffer对象都被释放且可回收，否则即使只有一个字节实际上也可能会占据8KB内存。
 
 
 ### 分配大对象
-~~~ 创建超过8KB的Buffer对象将会直接分配一个 SlowBuffer 类对象 作为slab单元而且是被独占。 ~~~
-已被废弃的: 使用 [color=#ec7379]Buffer.allocUnsafeSlow()[/color] 代替。
+SlowBuffer 类对象已被废弃的，官方使用 [color=#ec7379]Buffer.allocUnsafeSlow()[/color] 代替。
 ```
 // Big buffer, just alloc one
 this.parent = Buffer.allocUnsafeSlow(this.length);
 this.offset = 0;
 ```
 
- ~~~ Buffer对象是Javascript层面的，能够被V8垃圾回收标记，但是内部的parent属性指向的SlowBuffer 类对象却来自Nodejs自身C++中的定义，是C++层面的Buffer对象，所用内存不在V8堆中。 ~~~
 
 ###小结
 Javascript层面只是提供给使用Buffer对象，真正的内存还是Nodejs的C++层面提供。
@@ -417,7 +439,7 @@ Javascript层面只是提供给使用Buffer对象，真正的内存还是Nodejs�
 字符串转Buffer主要通过构造函数完成,这种方式只能存储一种编码类型。
 > Buffer.from(string[, encoding])
 
-一个Buffer对象可以存储不同编码类型的字符串转码值，需要调用到 write() 方法。
+一个Buffer对象可以存储不同编码类型的字符串转码值，需要调用到 [color=#ec7379]write()[/color] 方法。
 > buf.write(string[, offset[, length]][, encoding])
 
 |参数|描述|
@@ -435,14 +457,14 @@ const len = buf.write('\u00bd + \u00bc = \u00be', 0);
 console.log(`${len} 个字节: ${buf.toString('utf8', 0, len)}`);
 //12 个字节: ½ + ¼ = ¾
 ```
-注意：每种编码所用字节长度可能不同，处理需谨慎。
+[bgcolor=#ffe9ec]注意：每种编码所用字节长度可能不同，处理需谨慎。[/bgcolor]
 
 
 ### Buffer转字符串
 > buf.toString([encoding], [start], [end])
 
 ```
-const buf = Buffer.from('Buffer對象。');
+const buf = Buffer.from('Buffer对象。');
 console.log(buf);
 console.log(buf.toString('base64'));
 //<Buffer 42 75 66 66 65 72 e5 b0 8d e8 b1 a1 e3 80 82>
@@ -477,12 +499,11 @@ str = iconv.decode(Buffer.from('ça va'), 'win1251');
 buf = iconv.encode("ça va", 'win1251');
 
 console.log(str, buf);
-// Check if encoding is supported
-iconv.encodingExists("us-ascii")
-
 //Г§a va <Buffer 3f 61 20 76 61>
+
+
 ```
-LS1
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson1 查看效果[/color])
 同时还提供一个函数判断该模块是否支持某种编码类型
 ```
 // Check if encoding is supported
@@ -507,7 +528,7 @@ iconv.encodingExists("us-ascii")
 
 
 ## Buffer拼接
-实际开发的常用场景是需要使用流方式逐步读写文件，我们现在目录下弄个 test.txt 文本作为测试，随便输首中英文歌词做比较。
+实际开发的常用场景是需要使用流方式逐步读写文件，我们现在目录下弄个 [color=#ec7379]test.txt[/color] 文本作为测试，随便输首中英文歌词做比较。
 ```
 Someone like you 另寻沧海
 --Adele 阿黛拉
@@ -620,12 +641,12 @@ rs.on("end", function() {
     console.log(data);
 });
 ```
-LS2
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson2 查看效果[/color])
 执行脚本之后输出文本很正常，但是里面有个潜藏的隐患
 > data += chunk;
 
 这行代码会隐性执行[color=#ec7379]toString()[/color]操作，正常的英文内容自然没问题，但是对于宽字节的中文来说就是定时炸弹了。
-我们稍微修改一下配置让文件流每次只读取Buffer长度11个字节，当前目录新建脚本 [color=#ec7379]lesson3.js[/color]执行。
+我们稍微修改一下配置让文件流每次只读取Buffer长度[color=#ec7379]11[/color]个字节，当前目录新建脚本 [color=#ec7379]lesson3.js[/color]执行。
 ```
 const fs = require('fs');
 
@@ -639,7 +660,7 @@ rs.on("end", function() {
     console.log(data);
 });
 ```
-LS3
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson3 查看效果[/color])
 现在我们能看到数不清的[color=#ec7379]�[/color]乱码出现了。
 
 ### 乱码如何产生
@@ -662,14 +683,14 @@ rs.on("end", function() {
     console.log(data);
 });
 ```
-LS4
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson4 查看效果[/color])
 执行脚本之后再看发现文本内容即使被截断也能正常显示了。
 
 
 ### setEncoding原理
 即使设置编码类型之后也无法解释为什么可以正常输出问题，因为脚本还是以截断字节的方式读取拼接，因此最可能是每次读取流之后不再隐性执行toString()方法而是在读取完毕之后再一起执行。
 
-带着合理猜想，我们稍微在读取阶段看看chunk是不是Buffer格式，当前目录新建脚本 [color=#ec7379]lesson5.js[/color]执行。
+带着合理猜想，我们稍微在读取阶段看看[color=#ec7379]chunk[/color]是不是Buffer格式，当前目录新建脚本 [color=#ec7379]lesson5.js[/color]执行。
 ```
 const fs = require('fs');
 
@@ -685,7 +706,7 @@ rs.on("end", function() {
     console.log(data);
 });
 ```
-LS5
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson5 查看效果[/color])
 执行脚本之后很诧异结果和我想的并不一样，尽管不是完整顺序文本，但是的的确确能够正常输出中文。
 
 事实上在调用setEncoding()的时候可读流对象在内部设置了一个  [color=#ec7379]decoder[/color] 对象，每次读取data事件都通过该对象进行Buffer到字符串的解码才传递给调用者，至于怎么解决字节被截断的问题，这就需要接着往下看了。
@@ -693,13 +714,13 @@ LS5
 
 ### StringDecoder 类
 * new StringDecoder([encoding])
-    创建一个新的 StringDecoder 实例，把 Buffer 对象解码成字符串，但会保留编码过的多字节 UTF-8 与 UTF-16 字符
+    创建一个新的 StringDecoder 实例，把 Buffer 对象解码成字符串，但会保留编码过的多字节 [color=#ec7379]UTF-8 与 UTF-16[/color] 字符
 
 * stringDecoder.end([buffer])
-    以字符串的形式返回内部 buffer 中剩余的字节，残缺的 UTF-8 与 UTF-16 字符的字节会被替换成符合字符编码的字符，如果提供了 buffer 参数，则在返回剩余字节之前会再执行一次 stringDecoder.write()。
+    以字符串的形式返回内部 buffer 中剩余的字节，残缺的 [color=#ec7379]UTF-8 与 UTF-16[/color] 字符的字节会被替换成符合字符编码的字符，如果提供了 buffer 参数，则在返回剩余字节之前会再执行一次 [color=#ec7379]stringDecoder.write()[/color]。
 
 * stringDecoder.write(buffer)
-    返回一个解码后的字符串，并确保返回的字符串不包含 Buffer 末尾残缺的多字节字符，残缺的多字节字符会被保存在一个内部的 buffer 中用于下次调用 stringDecoder.write() 或 stringDecoder.end()。
+    返回一个解码后的字符串，并确保返回的字符串不包含 Buffer 末尾残缺的多字节字符，残缺的多字节字符会被保存在一个内部的 buffer 中用于下次调用 [color=#ec7379]stringDecoder.write()[/color] 或 [color=#ec7379]stringDecoder.end()[/color]。
 
 基本用法
 ```
@@ -714,7 +735,7 @@ console.log(decoder.write(euro));
 //¢
 //€
 ```
-LS6
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson6 查看效果[/color])
 
 当一个 Buffer 实例被写入 [color=#ec7379]StringDecoder[/color] 实例时，会使用一个内部的 buffer 来确保解码后的字符串不会包含残缺的多字节字符。 残缺的多字节字符会被保存在这个 buffer 中，直到下次调用 [color=#ec7379]stringDecoder.write()[/color] 或直到 [color=#ec7379]stringDecoder.end()[/color] 被调用。
 
@@ -728,12 +749,11 @@ decoder.write(Buffer.from([0x82]));
 console.log(decoder.end(Buffer.from([0xAC])));
 //€
 ```
-LS7
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson7 查看效果[/color])
 
 
 ### 正确拼装Buffer
-因为StringDecoder 类只支持UTF-8、Base64和
-UCS-2/UTF-16LE，所以setEncoding()只能解决大部分问题，所以还是得上到之前说的转码库解决。
+因为StringDecoder 类只支持[color=#ec7379]UTF-8、Base64和UCS-2/UTF-16LE[/color]，所以setEncoding()只能解决大部分问题，所以还是得上到之前说的转码库解决。
 接着上面代码修改，先去掉setEncoding方法，用一个数组存储所有Buffer片段并记录总长度，接受完所有数据之后合并成一个Buffer对象再转码。
 ```
 const fs = require('fs'),
@@ -753,7 +773,7 @@ rs.on("end", function() {
     console.log(str);
 });
 ```
-LS8
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson8 查看效果[/color])
 依赖库也能实现想要的输出结果了。
 
 
@@ -774,11 +794,11 @@ http.createServer(function(req, res) {
 }).listen(3000);
 console.log('已建立连接，现在可以新开一个终端运行loadtest命令测试效果。');
 ```
-LS9
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson9 查看效果[/color])
 我们使用[color=#ec7379]loadtest库[/color]来做一次压力测试，设置[color=#ec7379]100秒内200并发[/color]量，新开一个终端执行以下命令
 > loadtest -c 200 -t 100  http://127.0.0.1:3000
 
-不知道是什么东西的话可以看我直接翻译文档[Loadtest库做负载测试](https://www.qdfuns.com/article/40831/75977ca4560375091f4232792ca0b646.html)
+[color=#b1b1b1]（不知道是什么东西的话可以看我直接翻译文档的博文[Loadtest库做负载测试](https://www.qdfuns.com/article/40831/75977ca4560375091f4232792ca0b646.html)。）[/color]
 
 大概等个100秒让它慢慢压测输出，结果大概如下
 > [Tue Jul 17 2018 16:28:42 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
@@ -833,7 +853,7 @@ http.createServer(function(req, res) {
 }).listen(3000);
 console.log('已建立连接，现在可以新开一个终端运行loadtest命令测试效果。');
 ```
-LS10
+([color=#999]完整代码可以执行[Buffer-demo](https://github.com/Lin-Kyle/Buffer-demo)的 lesson10 查看效果[/color])
 压测结果如下
 > [Tue Jul 17 2018 16:23:45 GMT+0800 (中国标准时间)] INFO Requests: 0, requests per second: 0, mean latency: 0 ms
 [Tue Jul 17 2018 16:23:49 GMT+0800 (中国标准时间)] INFO Requests: 4718, requests per second: 959, mean latency: 208.2 ms
@@ -890,7 +910,7 @@ LS10
 |100% |313 ms |374 ms |
 可以看到性能相差无几字符串还略胜一筹。
 
-这就尴尬了，根据《Nodejs深入浅出》的内容应该分别是：
+这就尴尬了，根据[color=#ec7379]《Nodejs深入浅出》[/color]的内容应该分别是：
 测试的QPS（每秒查询次数）是2527.64，传输率为每秒25370.16 KB。
 测试的QPS（每秒查询次数）是4843.28，传输率为每秒48 612.56 KB。
 暂时也不知道怎么找出原因，然后下面的说法现在也不能尽信了。
@@ -899,20 +919,38 @@ LS10
 
 
 ### 文件读取
-上面提到过的文件读取中有个 highWaterMark设置 对性能也至关重要，例如 fs.createReadStream() 的工作方式是在内存中准备一段Buffer，然后在 fs.read() 读取时逐步从磁盘中将字节复制到Buffer中。完成一次读取时则从这个Buffer中通过 slice() 方法取出部分数据作为一个小Buffer对象，再通过data事件传递给调用方。如果Buffer用完则重新分配一个，否则继续使用。
-
+上面提到过的文件读取中有个 [color=#ec7379]highWaterMark[/color]设置 对性能也至关重要，例如 [color=#ec7379]fs.createReadStream()[/color] 的工作方式是在内存中准备一段Buffer，然后在 [color=#ec7379]fs.read()[/color] 读取时逐步从磁盘中将字节复制到Buffer中。完成一次读取时则从这个Buffer中通过 [color=#ec7379]slice()[/color] 方法取出部分数据作为一个小Buffer对象，再通过[color=#ec7379]data事件[/color]传递给调用方。如果Buffer用完则重新分配一个，否则继续使用。
+```
+var pool;
+function allocNewPool(poolSize) {
+  pool = new Buffer(poolSize);
+  pool.used = 0;
+}
+```
 在理想状况下每次读取的长度就是用户指定的 highWaterMark设置 长度。但是可能读到文件结尾或者文件本身没有设置长度这么大，这个预先指定的Buffer对象将有部分剩余可以分配给下次使用。 pool 是常驻内存，只有当pool单元剩余数量小于128（kMinPoolSpace）字节时才会重新分配一个新的Buffer对象。Nodejs源码如下：
 ```
-if (size > (poolSize - poolOffset)) createPool();
-
-------------省略其他代码------------
-
-if (length > (poolSize - poolOffset)) createPool();
+if (!pool || pool.length - pool.used < kMinPoolSpace) {
+  // discard the old pool
+  pool = null;
+  allocNewPool(this._readableState.highWaterMark);
+}
 ```
-[color=#b1b1b1]（分别两个函数的源码，表达意思其实一致）[/color]
+[color=#b1b1b1]（这里应该不是Buffer而是createReadStream的源代码）[/color]
 
 这里与Buffer的内存分配比较类似，highWaterMark的大小影响如下：
 * 对Buffer内存的分配和使用有一定影响
 * 设置过小可能导致系统调用次数过多
 
 读取一个相同的大文件时候，highWaterMark的大小与读取速度成正比。
+
+
+##完整demo
+[memory-demo](https://github.com/Lin-Kyle/memory-demo)
+里面demo都是自己写的，没有依赖可以直接跑。懒得写就去上面搬走看，懒得搬就直接看文章，大部分代码连输出信息都给你们了。
+
+
+
+## 参考资料
+[Node.js v10.6.0 文档](http://nodejs.cn/api/buffer.html#buffer_class_method_buffer_allocunsafe_size)
+[nodejs 深入浅出](https://book.douban.com/subject/25768396/)
+[node/lib/buffer.js](https://github.com/nodejs/node/blob/master/lib/buffer.js)

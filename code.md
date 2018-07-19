@@ -1,8 +1,8 @@
-![avatar](timg.jpg)
+![avatar](2.jpg)
 
 ## 初始池
 ```
-//内存分配界限
+//pool池分配界限
 Buffer.poolSize = 8 * 1024;
 var poolSize, poolOffset, allocPool;
 
@@ -11,12 +11,31 @@ var poolSize, poolOffset, allocPool;
 //初始化池
 function createPool() {
   poolSize = Buffer.poolSize;
-  allocPool = createUnsafeArrayBuffer(poolSize);
+  allocPool = createUnsafeArrayBuffer(poolSize);//创建一个新的slab单元
   poolOffset = 0;
 }
-```
+createPool()//预配池
 
-## 分配内存allocate()
+------------省略中间代码------------
+
+// |zeroFill| can be undefined when running inside an isolate where we
+// do not own the ArrayBuffer allocator.  Zero fill is always on in that case.
+ /*在隔离区域中运行且我们不拥有数组缓冲分配符时zeroFill可以是未定义的，总是用0填充*/
+const zeroFill = bindingObj.zeroFill || [0];
+
+function createUnsafeArrayBuffer(size) {
+    zeroFill[0] = 0;
+    try {
+        return new ArrayBuffer(size);
+    } finally {
+        zeroFill[0] = 1;
+    }
+}
+```
+[color=#ec7379]bindingObj.zeroFill[/color]来龙去脉是什么我也没搞懂，反正知道是填充0就好了。
+[color=#ec7379]ArrayBuffer对象[/color]代表储存二进制数据的一段内存，它不能直接读写，只能通过视图（TypedArray视图和DataView视图)来读写。而[bgcolor=#ffe9ec]ArrayBuffer是C++直接分配内存生成[/bgcolor]。
+
+## allocate()
 ```
 function allocate(size) {
     if (size <= 0) {
@@ -43,14 +62,16 @@ function alignPool() {
     }
 }
 ```
-这里就是负责分配内存的主要源代码了，
-* size <= 0，返回new FastBuffer()
+这里就是负责pool池分配内存的源代码了，
+1，size <= 0，返回new FastBuffer()
 
-* size < 4 * 1024
-    - 如果内存不够调用createPool()初始化；
-    - 返回处理后的new FastBuffer()；
+2，size < 4 * 1024
+  1）如果内存不够调用createPool()初始化；
+  2）返回处理后的new FastBuffer()；
 
-* 返回new FastBuffer()
+,3，返回createUnsafeBuffer()
+
+明明是8K池但是却限制在4K，这里没懂。
 
 ## new FastBuffer() && createUnsafeBuffer(size)
 ```
@@ -71,28 +92,17 @@ for (const [name, method] of Object.entries(internalBuffer.readWrites)) {
 
 ------------省略中间代码------------
 
-// |zeroFill| can be undefined when running inside an isolate where we
-// do not own the ArrayBuffer allocator.  Zero fill is always on in that case.
-const zeroFill = bindingObj.zeroFill || [0];
-
 //入参
 function createUnsafeBuffer(size) {
     return new FastBuffer(createUnsafeArrayBuffer(size));
 }
 
-function createUnsafeArrayBuffer(size) {
-    zeroFill[0] = 0;
-    try {
-        return new ArrayBuffer(size);
-    } finally {
-        zeroFill[0] = 1;
-    }
-}
 ```
 
-Uint8Array类型数组 表示的8位无符号整数数组。内容被初始化为0。一旦建立，您可以使用对象的方法或使用标准数组索引语法（即使用括号表示法）引用数组中的元素，所以 FastBuffer 其实就是继承自 Uint8Array 和 Buffer的类。
+[color=#ec7379]Uint8Array类型数组[/color]表示的8位无符号整数数组。内容被初始化为0。一旦建立，您可以使用对象的方法或使用标准数组索引语法（即使用括号表示法）引用数组中的元素，所以 FastBuffer 其实就是继承自 [color=#ec7379]Uint8Array[/color] 和 [color=#ec7379]Buffer[/color] 的类。
+之前说过，Nodejs采用C++層面申請内存，Javascript中分配内存的策略，所以FastBuffer类也是采用Javascript分配的。
 
-ArrayBuffer 对象表示用于存储不同类型化数组的数据的原始数据缓冲区。无法读取或写入 ArrayBuffer，但可以将它传递给类型化数组或 DataView 对象 来解释原始缓冲区。可以使用 ArrayBuffer 来存储任何类型的数据（或混合类型的数据）。createUnsafeBuffer() 最终也是输出ArrayBuffer参数的FastBuffer实例。
+[color=#ec7379]createUnsafeBuffer()[/color] 最终也是输出ArrayBuffer参数的FastBuffer实例，而且是共用内存不是另外分配。
 
 
 ## Buffer.from()
@@ -173,7 +183,8 @@ function fromString(string, encoding) {
     return b;
 }
 ```
-大概就是参数没问题，小Buffer对象用new FastBuffer分配，大Buffer对象直接C++方法分配
+createFromString()是C++分配内存的方法。
+大体就是如果参数没问题，小Buffer对象用new FastBuffer()，大Buffer对象采用createFromString()。
 
 
 ### Buffer.from(arrayBuffer[, byteOffset[, length]])
@@ -226,11 +237,11 @@ function fromArrayBuffer(obj, byteOffset, length) {
     return new FastBuffer(obj, byteOffset, length);
 }
 ```
-整段代码来看其实也就是做些参数处理，最终返回的还是 FastBuffer类 实例。
+整段代码来看其实也就是做些参数处理，最终返回的还是FastBuffer类实例。
 
 ### 主代码
 
-我们跳过源码里的判断句直接看逻辑
+我们跳过源码里的判断分支句直接看主逻辑
 ```
 const valueOf = value.valueOf && value.valueOf();
 if (valueOf !== null && valueOf !== undefined && valueOf !== value) return Buffer.from(valueOf, encodingOrOffset, length);
@@ -238,7 +249,7 @@ if (valueOf !== null && valueOf !== undefined && valueOf !== value) return Buffe
 var b = fromObject(value);
 if (b) return b;
 ```
-valueOf 返回 Array 对象的原始值，然后有值情况下拿原始值重新调用自身。
+[color=#ec7379]valueOf[/color] 返回 Array 对象的原始值，然后有值情况下拿原始值重新调用自身。
 ```
 function fromObject(obj) {
     if (isUint8Array(obj)) {
@@ -273,10 +284,10 @@ const {
 Buffer.prototype.copy =
   function copy(target, targetStart, sourceStart, sourceEnd) {
     return _copy(this, target, targetStart, sourceStart, sourceEnd);
-  };
+};
 ```
-只看这段也知道_copy是做到复制写入的作用。
-后面的代码根据不同情况也就输出new FastBuffer() 和 fromArrayLike() 两种，FastBuffer类已经知道了，我们直接看fromArrayLike() 的源码。
+只看这段也知道[color=#ec7379]_copy[/color]是做到复制写入的作用。
+后面的代码根据不同情况也就输出new FastBuffer() 和 fromArrayLike() 两种，FastBuffer类已经知道了，我们直接看[color=#ec7379]fromArrayLike()[/color] 的源码。
 ```
 function fromArrayLike(obj) {
     const length = obj.length;
@@ -289,6 +300,17 @@ function fromArrayLike(obj) {
 
 
 
+### 总结
+内存分配简单记忆就两种：
+createUnsafeBuffer()：C++分配
+其余：allocate分配
+
+Buffer.from()大概分三种情况：
+1，String：使用fromString转变为Buffer对象输出，调用allocate分配内存；
+2，arrayBuffer：使用ArrayBuffer与新创建的Buffer共享内存，调用C++直接分配内存；
+3，其他：返回复制值的副本Buffer对象，调用allocate分配内存；
+
+
 ## Buffer.alloc()
 我们看看这个方法的源码。
 ```
@@ -299,14 +321,13 @@ function fromArrayLike(obj) {
 Buffer.alloc = function alloc(size, fill, encoding) {
   assertSize(size);
   if (fill !== undefined && size > 0) {
-    //上面说过，createUnsafeBuffer(size)最终也是输出ArrayBuffer参数的FastBuffer实例。
-    //而_fill会做它做些处理
     return _fill(createUnsafeBuffer(size), fill, encoding);
   }
   return new FastBuffer(size);
 };
 ```
-先看看 assertSize() 方法。
+上面说过，createUnsafeBuffer(size)最终也是输出ArrayBuffer参数的FastBuffer实例，而_fill会对它做些处理。
+再看看 [color=#ec7379]assertSize() [/color]方法。
 ```
 // The 'assertSize' method will remove itself from the callstack when an error
 // occurs. This is done simply to keep the internal details of the
