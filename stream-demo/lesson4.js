@@ -7,7 +7,7 @@ const path = './lesson4.txt',
 
 
 //监听事件
-writable.on('error', () => console.log('是我干的'))
+writable.on('error', (err) => console.log(err))
 
 //摧毁
-writable.destroy();
+writable.destroy('辣手摧花');

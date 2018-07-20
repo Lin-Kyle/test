@@ -9,7 +9,7 @@ const path = './lesson1.txt',
 writable.on('open', () => console.log('open'))
 writable.on('ready', () => console.log('ready'))
 writable.on('finish', () => console.log('finish'))
-writable.on('close', () => console.log('close'))
+writable.on('close', () => console.log('你看看同目录的lesson1.txt是不是写了点什么？'))
 writable.on('error', () => console.log('error'))
 
 //写死结束

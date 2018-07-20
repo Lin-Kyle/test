@@ -11,4 +11,4 @@ writable.on('error', () => console.log('在调用了 stream.end() 方法之后�
 
 //写死结束
 writable.end('我就随便写点什么吧！', null, () => console.log('你可以看看lesson3.txt写了什么了'));
-writable.write('你就随便看看吧！');
+writable.write('你猜我这句话能不能写进去？');
