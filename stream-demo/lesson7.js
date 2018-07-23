@@ -10,4 +10,6 @@ pass.on('data', (chunk) => {
     console.log(chunk.toString());
 });
 pass.write('ok'); // 不会触发 'data' 事件。
-pass.resume(); // 必须调用它才会触发 'data' 事件。
+
+console.log('稍微等待两秒钟！');
+setTimeout(() => pass.resume(), 2000) // 必须调用它才会触发 'data' 事件。
