@@ -2,14 +2,17 @@
 这篇文章实话说我有点虚，因为平时都不怎么研究这一块的，然后涉及到的知识点超多，我只能到处看看资料总结一下相关信息，所以在此我只想说句：
 **本文章内容只代表个人立场，有错必改！**
 原本打算一次性总结，后来越扯越多超过字数限制了，就干脆做成http系列文章了，不定时更新原有内容（发现哪里出错的话），不定时新增系列文章，请见谅!
-- [x] [Http协议系列----协议原理构成与连接管理](https://www.qdfuns.com/article/40831/577fa2647a7eb3123c6b138c6299c640.html)
-- [ ] [Http协议系列—-字符编码，cookie，缓存，疑难杂症](https://www.qdfuns.com/article/40831/8fbe235d81b5ada00b53ddde9fd848a4.html)
+
+因为之前写得太臃肿又不够详细，最近刚好复习到这一块的内容，所以决定把这些文章都拆分成更加细致一点，补充详细内容，优化排版布局，目前来看还是应该的。后续没勾选的只是还没改到那里去，可以先不看。
++ [x] [Http协议系列 — 协议原理构成与连接管理](https://www.qdfuns.com/article/40831/577fa2647a7eb3123c6b138c6299c640.html)
+- [x] [Http协议系列 — cookie，Session，缓存机制](https://www.qdfuns.com/article/40831/8fbe235d81b5ada00b53ddde9fd848a4.html)
 - [ ] [Http协议系列—-进阶Https基础](https://www.qdfuns.com/article/40831/3ffb59e3d1dfc7ed44e521c2a57aeec7.html)
 - [ ] [WebSocket协议入门基础](https://www.qdfuns.com/article/40831/6db7957dad157aa4239ec144c0aa9c55.html)
 - [ ] [简单使用Nodejs+Socket.io2.0+boostrap4.0实现聊天室功能](https://www.qdfuns.com/article/40831/18843630b0a73d009fe9ed56e70156a8.html)
 
-[bgcolor=#bf360c][color=#fff]PS: 好多人反映看不懂繁体字，鉴于这些理论性东西不仅枯燥而且复杂，我就都转简体吧。[/color][/bgcolor]
-
+### 修改
+忘记日期 [color=#ec7379]好多人反映看不懂繁体字，鉴于这些理论性东西不仅枯燥而且复杂，我就都转简体吧。[/color]
+2018/08/02 [color=#ec7379]抽离走其他内容，本章纯讲HTTP协议[/color]
 
 
 ## 什么是HTTP协议？（来自百度百科）
@@ -25,7 +28,7 @@
 
 * 无状态，有会话
 	1） 在同一个连接中，两个执行成功的请求之间是没有关系的。这就带来了一个问题，用户没有办法在同一个网站中进行连续的交互；
-    2） HTTP的头部扩展[color=#2b91e3]Cookies[/color]就可以解决这个问题，创建一个会话让每次请求都能共享相同的上下文信息，达成相同的状态；
+    2） HTTP的头部扩展**[color=#2b91e3]Cookies[/color]**就可以解决这个问题，创建一个会话让每次请求都能共享相同的上下文信息，达成相同的状态；
 
 * 连接
 	一个连接是由传输层来控制的，这从根本上不属于HTTP的范围。HTTP并不需要其底层的传输层协议是面向连接的，只需要它是可靠的，或不丢失消息的（至少返回错误）。
@@ -33,7 +36,7 @@
 
 ## HTTP架构（来自百度百科）
 HTTP是客户端和服务端请求和应答的标准，之间可能隔著多个中间层。
-通常，由HTTP客户端发起一个请求，建立一个到服务器指定端口（默认是[color=#2b91e3]80[/color]端口）的TCP连接。HTTP服务器则在那个端口监听客户端发送过来的请求。一旦收到请求，服务器（向客户端）发回一个状态行和（响应的）消息，消息的消息体可能是请求的文件、错误消息、或者其它一些信息。
+通常，由HTTP客户端发起一个请求，建立一个到服务器指定端口（默认是**[color=#2b91e3]80[/color]**端口）的TCP连接。HTTP服务器则在那个端口监听客户端发送过来的请求。一旦收到请求，服务器（向客户端）发回一个状态行和（响应的）消息，消息的消息体可能是请求的文件、错误消息、或者其它一些信息。
 [color=#ff5722]HTTP使用TCP而不是UDP的原因在于（打开）一个网页必须传送很多数据，而TCP协议提供传输控制，按顺序组织数据，和错误纠正。[/color]
 通过HTTP或者HTTPS协议请求的资源由**[color=#2b91e3]统一资源标示符（Uniform Resource Identifiers）[/color]**（或者，更准确一些，URLs）来标识。
 
@@ -78,9 +81,9 @@ URN是作为特定内容的唯一名称使用的，[color=#ff5722]与当前资�
 ## 建立连接 --- 三次握手（three-way handshake）
 所谓的“[color=#f4511e]三次握手[/color]”即对每次发送的数据量是怎样跟踪进行协商使数据段的发送和接收同步，根据所接收到的数据量而确定的数据确认数及数据发送、接收完毕后何时撤消联系，并建立虚连接。
 为了提供可靠的传送，TCP在发送新的数据之前，以特定的顺序将数据包的序号，并需要这些包传送给目标机之后的确认消息。TCP总是用来发送大批量的数据。当应用程序在收到数据后要做出确认时也要用到TCP。
-* 第一次握手：建立连接时，客户端发送[color=#2b91e3]syn包（syn=j）[/color]到服务器，并进入[color=#2b91e3]SYN_SENT状态[/color]，等待服务器确认；
-* 第二次握手：服务器收到syn包，必须确认客户的[color=#2b91e3]SYN（ack=j+1）[/color]，同时自己也发送一个[color=#2b91e3]SYN包（syn=k）[/color]，即SYN+ACK包，此时服务器进入[color=#2b91e3]SYN_RECV状态[/color]；
-* 第三次握手：客户端收到服务器的[color=#2b91e3]SYN+ACK包[/color]，向服务器发送[color=#2b91e3]确认包ACK（ack=k+1）[/color]，此包发送完毕，客户端和服务器进入[color=#2b91e3]ESTABLISHED（TCP连接成功）状态[/color]，完成三次握手。
+* 第一次握手：建立连接时，客户端发送**[color=#2b91e3]syn包（syn=j）[/color]到服务器，并进入[color=#2b91e3]SYN_SENT状态[/color]**，等待服务器确认；
+* 第二次握手：服务器收到syn包，必须确认客户的**[color=#2b91e3]SYN（ack=j+1）[/color]，同时自己也发送一个[color=#2b91e3]SYN包（syn=k）[/color]，即SYN+ACK包，此时服务器进入[color=#2b91e3]SYN_RECV状态[/color]**；
+* 第三次握手：客户端收到服务器的**[color=#2b91e3]SYN+ACK包[/color]，向服务器发送[color=#2b91e3]确认包ACK（ack=k+1）[/color]，此包发送完毕，客户端和服务器进入[color=#2b91e3]ESTABLISHED（TCP连接成功）状态[/color]**，完成三次握手。
 
 ![图片描述](attimg://article/content/picture/201804/07/135318nx9nmymnzbfn1z74.jpg)
 [color=#b1b1b1]（还没太懂也懒，直接百度图片找张清晰的拿来用的。。）[/color]
@@ -104,7 +107,7 @@ URN是作为特定内容的唯一名称使用的，[color=#ff5722]与当前资�
 [color=#b1b1b1]（更多内容请自行查阅，本节到此为止了。）[/color]
 
 ##断开连接 ---- 四次挥手（four-way handshake）
-为什么建立连接要[color=#2b91e3]三次握手（three-way handshake）[/color]而断开连接却需要[color=#2b91e3]四次挥手（four-way handshake）[/color]?
+为什么建立连接要**[color=#2b91e3]三次握手（three-way handshake）[/color]**而断开连接却需要**[color=#2b91e3]四次挥手（four-way handshake）[/color]**?
 这是因为服务端的LISTEN状态下的SOCKET当收到SYN报文的建连请求后，它可以把ACK和SYN[color=#ff5722](ACK起应答作用，而SYN起同步作用）[/color]放在一个报文里来发送。但关闭连接时，当收到对方的FIN报文通知时，它仅仅表示对方没有数据发送给你了；但未必你所有的数据都全部发送给对方了，所以你可以未必会马上会关闭SOCKET，也即你可能还需要发送一些数据给对方之后，再发送FIN报文给对方来表示你同意现在可以关闭连接了，所以它这里的ACK报文和FIN报文多数情况下都是分开发送的。
 
 * 当主机A的应用程序通知TCP数据已经发送完毕时，TCP向主机B发送一个带有[color=#ff5722]FIN附加标记[/color]的报文段；
@@ -200,7 +203,7 @@ HTTP1.1新增了五种请求方法：**[color=#2b91e3]OPTIONS， PUT， DELETE�
 
 
 ## HTTP消息头
-一个消息头由不区分大小写的名称后跟一个冒号“[color=#2b91e3]：[/color]”，冒号后跟具体的值（不带换行符）组成。该值前面的引导空白会被忽略。
+一个消息头由不区分大小写的名称后跟一个冒号“**[color=#2b91e3]：[/color]**”，冒号后跟具体的值（不带换行符）组成。该值前面的引导空白会被忽略。
 
 * 一般头: 同时适用于请求和响应消息，但与最终消息主体中传输的数据无关的消息头。
 * 请求头: 包含有关要获取的资源或客户端本身更多信息的消息头。
@@ -239,9 +242,9 @@ HTTP1.1新增了五种请求方法：**[color=#2b91e3]OPTIONS， PUT， DELETE�
 
 ## Http连接管理
 ### 短连接
-HTTP 最早期的模型，也是  [color=#2b91e3]HTTP/1.0 的默认模型[/color][color=#b1b1b1]（如果没有指定 Connection 协议头，或者是值被设置为 close）[/color]。每一个 HTTP 请求都由它自己独立的连接完成；这意味著发起每一个 HTTP 请求之前都会有一次 TCP 握手，而且是连续不断的。
+HTTP 最早期的模型，也是  **[color=#2b91e3]HTTP/1.0 的默认模型[/color][color=#b1b1b1]（如果没有指定 Connection 协议头，或者是值被设置为 close）[/color]**。每一个 HTTP 请求都由它自己独立的连接完成；这意味著发起每一个 HTTP 请求之前都会有一次 TCP 握手，而且是连续不断的。
 TCP 协议握手本身就是耗费时间的，所以 TCP 可以保持更多的热连接来适应负载。短连接破坏了 TCP 具备的能力，新的冷连接降低了其性能。
-而在 [color=#2b91e3]HTTP/1.1[/color] 中，只有当 [color=#2b91e3]Connection[/color] 被设置为 [color=#2b91e3]close[/color] 时才会用到这个模型。
+而在 **[color=#2b91e3]HTTP/1.1[/color] 中，只有当 [color=#2b91e3]Connection[/color] 被设置为 [color=#2b91e3]close[/color]** 时才会用到这个模型。
 
 这个简单的模型对性能有先天的限制：打开每一个 TCP 连接都是相当耗费资源的操作。客户端和服务器端之间需要交换好些个消息。当请求发起时，网络延迟和带宽都会对性能造成影响。现代浏览器往往要发起很多次请求（十几个或者更多）才能拿到所需的完整信息，证明了这个早期模型的效率低下。
 
@@ -264,11 +267,11 @@ TCP 协议握手本身就是耗费时间的，所以 TCP 可以保持更多的�
 
 	例如[color=#f4511e]Keep-Alive: max=5， timeout=3000， abc=123；[/color]
 
-  HTTP/1.0 里默认并不适用长连接。把 Connection 设置成 close 以外的其它参数都可以让其保持长连接，通常会设置为 [color=#2b91e3]retry-after[/color]。
+  HTTP/1.0 里默认并不适用长连接。把 Connection 设置成 close 以外的其它参数都可以让其保持长连接，通常会设置为 **[color=#2b91e3]retry-after[/color]**。
   在 HTTP/1.1 里，默认就是长连接的，协议头都不用再去声明它[color=#b1b1b1]（但我们还是会把它加上，万一某个时候因为某种原因要退回到 HTTP/1.0 呢）[/color]。
 
 * HTTP/1.1 persistent
-    现在HTTP/1.1 逐渐停止了对 keep-alive 连接的支持， 用一种名为[color=#2b91e3]持久连接（persistent connection） [/color]的改进型设计取代了它。
+    现在HTTP/1.1 逐渐停止了对 keep-alive 连接的支持， 用一种名为**[color=#2b91e3]持久连接（persistent connection） [/color]**的改进型设计取代了它。
     与 HTTP/1.0+ 的 keep-alive 连接不同，HTTP/1.1 持久连接在默认情况下是激活的。 除非特别指明，否则 HTTP/1.1 假定所有连接都是持久的。[color=#ff5722]要在事务处理结束之后将连接关闭，HTTP/1.1 应用程序必须向报文中显式地添加一个Connection:close首部[/color]。这是与以前的 HTTP 协议版本很重要的区别，在以前的版本中，keep-alive 连接要么是可选的，要么根本就不支持。这种连接相当于是在HTTP/1.1之上默认开启keep-alive
 
 
@@ -279,9 +282,9 @@ TCP 协议握手本身就是耗费时间的，所以 TCP 可以保持更多的�
 ### 流水线
 默认情况下，HTTP 请求是按顺序发出的。下一个请求只有在当前请求收到应答过后才会被发出。由于会受到网络延迟和带宽的限制，在下一个请求被发送到服务器之前，可能需要等待很长时间。
 
-流水线是在同一条长连接上发出连续的请求，而不用等待应答返回。这样可以避免连接延迟。理论上讲，性能还会因为两个 HTTP 请求有可能被打包到一个 TCP 消息包中而得到提升。就算 HTTP 请求不断的继续，尺寸会增加，但设置 TCP 的 [color=#2b91e3]MSS（Maximum Segment Size）[/color] 选项，任然足够包含一系列简单的请求。
+流水线是在同一条长连接上发出连续的请求，而不用等待应答返回。这样可以避免连接延迟。理论上讲，性能还会因为两个 HTTP 请求有可能被打包到一个 TCP 消息包中而得到提升。就算 HTTP 请求不断的继续，尺寸会增加，但设置 TCP 的 **[color=#2b91e3]MSS（Maximum Segment Size）[/color]** 选项，任然足够包含一系列简单的请求。
 
-并不是所有类型的 HTTP 请求都能用到流水线：只有 [color=#2b91e3]idempotent[/color] 方式，比如 [color=#2b91e3]GET、HEAD、PUT[/color] 和 [color=#2b91e3]DELETE[/color] 能够被安全的重试：如果有故障发生时，流水线的内容要能被轻易的重试。
+并不是所有类型的 HTTP 请求都能用到流水线：只有 **[color=#2b91e3]idempotent[/color] 方式，比如 [color=#2b91e3]GET、HEAD、PUT[/color] 和 [color=#2b91e3]DELETE[/color]** 能够被安全的重试：如果有故障发生时，流水线的内容要能被轻易的重试。
 
 今天，所有遵循 HTTP/1.1 的代理和服务器都应该支持流水线，虽然实际情况中还是有很多限制：一个很重要的原因是，仍然没有现代浏览器去默认支持这个功能。
 
